@@ -1,3 +1,4 @@
+using Dao;
 using UnityEngine;
 
 public class Test : MonoBehaviour
@@ -6,7 +7,8 @@ public class Test : MonoBehaviour
 
     private void Start()
     {
-        go = GameObject.Find("Canvas/Puzzle1_Box");
+        go = FindUtility.Find("CameraSetting", FindUtility.Find("Room1").transform);
         
+
     }
 }

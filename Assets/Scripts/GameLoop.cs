@@ -1,67 +1,30 @@
+ï»¿using Dao.CameraSystem;
+using Dao.SceneSystem;
 using UnityEngine;
 
 public class GameLoop : MonoBehaviour
 {
-    public static GameLoop Instance { get; private set; }
+    public float cameraMoveSpeed = 60;
 
-    public float cameraMoveSpeed = 3;
-    public float cameraMoveAreaWidth = 50;
-    public Vector2 cameraMoveRange;
-
-    [Header("UI")]
-    public GameObject puzzle1_boxPanel;
-    public Sprite switchON;
-    public Sprite switchOFF;
-    public GameObject notePanel;
-    public GameObject wordItemPrefab;
-
-    [Header("Word")]
-    public Sprite onWord;
-    public Sprite offWord;
-
-    [Header("Scene")]
-    public GameObject scene1;
-    public GameObject scene2;
-
-    private InteractManager m_interactManager;
-
-    private void Awake()
+    private void Start()
     {
-        Instance ??= this;
-
-        //m_cameraController = new CameraController(Camera.main);
-        CameraController.Instance.Init(Camera.main);
+        CameraController.Instance.BindCamera(Camera.main);
         CameraController.Instance.MoveSpeed = cameraMoveSpeed;
-        CameraController.Instance.MoveAreaWidth = 50;
-        CameraController.Instance.MoveRange = cameraMoveRange;
 
-        UIManager.Instance.AddPanel("Puzzle1_Box", new UIPanel(puzzle1_boxPanel) { name = "Puzzle1_Box" });
-        UINote note = new UINote(notePanel, wordItemPrefab);
-        UIManager.Instance.AddPanel("Note", note);
-
-        WordManager.Instance.AddWord("Open", "¿ª", onWord);
-        WordManager.Instance.AddWord("Close", "¹Ø", offWord);
-        m_interactManager = new InteractManager();
-
-        //WordManager.Instance.AddFoundWord("Open");
-        //WordManager.Instance.AddFoundWord("Close");
-
-        //UIManager.Instance.OpenPanel("Note");
-        scene1.SetActive(true);
-        scene2.SetActive(false);
+        SceneManager.Instance.AddScene("Room1", new Room1());
+        SceneManager.Instance.AddScene("Room2", new Room2());
+        SceneManager.Instance.LoadScene("Room1");
     }
 
     private void Update()
     {
-        CameraController.Instance.Update();
+        SceneManager.Instance.Update(Time.deltaTime);
+        CameraController.Instance.Update(Time.deltaTime);
 
-        m_interactManager.Update();
-    }
-
-    public void ChangeScene()
-    {
-        scene1.SetActive(false);
-        scene2.SetActive(true);
-        CameraController.Instance.Enable = true;
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            SceneManager.Instance.LoadScene("Room2");
+        }
     }
 }
+
