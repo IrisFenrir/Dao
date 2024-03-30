@@ -3,12 +3,8 @@ using UnityEngine;
 
 public class Test : MonoBehaviour
 {
-    public GameObject go;
-
-    private void Start()
+    private void Update()
     {
-        go = FindUtility.Find("CameraSetting", FindUtility.Find("Room1").transform);
         
-
     }
 }

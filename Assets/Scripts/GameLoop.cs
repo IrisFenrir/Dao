@@ -4,7 +4,17 @@ using UnityEngine;
 
 public class GameLoop : MonoBehaviour
 {
+    public static GameLoop Instance { get; private set; }
+
     public float cameraMoveSpeed = 60;
+
+    [Header("Room1")]
+    public Vector2 doorHandleAngleRange;
+
+    private void Awake()
+    {
+        Instance ??= this;
+    }
 
     private void Start()
     {
@@ -21,10 +31,10 @@ public class GameLoop : MonoBehaviour
         SceneManager.Instance.Update(Time.deltaTime);
         CameraController.Instance.Update(Time.deltaTime);
 
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            SceneManager.Instance.LoadScene("Room2");
-        }
+        //if (Input.GetKeyDown(KeyCode.Space))
+        //{
+        //    SceneManager.Instance.LoadScene("Room2");
+        //}
     }
 }
 

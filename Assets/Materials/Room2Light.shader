@@ -1,4 +1,4 @@
-﻿Shader "Custom/SimpleSpriteShaderWithColorDodge"
+﻿Shader "Custom/Room2Light"
 {
     Properties
     {

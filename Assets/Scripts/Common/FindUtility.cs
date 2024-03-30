@@ -1,4 +1,7 @@
-﻿using UnityEngine;
+﻿using Dao.InteractionSystem;
+using System;
+using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace Dao
@@ -26,7 +29,7 @@ namespace Dao
                 {
                     if (names[0] == item.name)
                         return item;
-                    GameObject result = FindRecursizely(item, name);
+                    GameObject result = FindRecursively(item, name);
                     if (result != null) return result;
                 }
             }
@@ -42,14 +45,14 @@ namespace Dao
             return FindWithPathRecursively(child.gameObject, path, index + 1);
         }
 
-        private static GameObject FindRecursizely(GameObject parent, string name)
+        private static GameObject FindRecursively(GameObject parent, string name)
         {
             for (int i = 0; i < parent.transform.childCount; i++)
             {
                 Transform child = parent.transform.GetChild(i);
                 if (child.name == name)
                     return child.gameObject;
-                GameObject result = FindRecursizely(child.gameObject, name);
+                GameObject result = FindRecursively(child.gameObject, name);
                 if (result != null) return result;
             }
             return null;
@@ -70,6 +73,24 @@ namespace Dao
                     return result;
             }
             return null;
+        }
+
+        public static T[] FindAllOfType<T>(Transform parent) where T:MonoBehaviour
+        {
+            List<T> results = new List<T>();
+            FindAllRecursively(parent, p => p.GetComponent<InteractiveItem>() != null, p => results.Add(p.GetComponent<T>()));
+            return results.ToArray();
+        }
+
+        private static void FindAllRecursively(Transform parent, Predicate<Transform> condition, Action<Transform> action)
+        {
+            if (parent == null) return;
+            if (condition(parent))
+                action(parent);
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                FindAllRecursively(parent.GetChild(i), condition, action);
+            }
         }
     }
 }
