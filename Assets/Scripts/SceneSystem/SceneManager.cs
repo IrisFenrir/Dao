@@ -11,6 +11,7 @@ namespace Dao.SceneSystem
         public void AddScene(string name, IScene scene)
         {
             if (string.IsNullOrEmpty(name) || scene == null) return;
+            scene.name = name;
             m_scenes.TryAdd(name, scene);
         }
 
@@ -19,12 +20,20 @@ namespace Dao.SceneSystem
             m_scenes.Remove(name);
         }
 
+        public T GetScene<T>(string sceneName) where T:IScene
+        {
+            return m_scenes[sceneName] as T;
+        }
+
         public void LoadScene(string name)
         {
             if (m_scenes.TryGetValue(name, out IScene nextScene))
             {
-                Current?.OnExit();
+                Current?.Disable();
+                Current?.Hide();
                 nextScene.OnEnter();
+                nextScene.Enable();
+                nextScene.Show();
                 Current = nextScene;
             }
         }

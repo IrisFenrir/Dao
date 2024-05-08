@@ -1,5 +1,4 @@
-﻿using Dao.InteractionSystem;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -78,7 +77,7 @@ namespace Dao
         public static T[] FindAllOfType<T>(Transform parent) where T:MonoBehaviour
         {
             List<T> results = new List<T>();
-            FindAllRecursively(parent, p => p.GetComponent<InteractiveItem>() != null, p => results.Add(p.GetComponent<T>()));
+            FindAllRecursively(parent, p => p.GetComponent<Responder>() != null, p => results.Add(p.GetComponent<T>()));
             return results.ToArray();
         }
 

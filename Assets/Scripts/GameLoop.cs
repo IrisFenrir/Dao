@@ -1,5 +1,6 @@
 ﻿using Dao.CameraSystem;
 using Dao.SceneSystem;
+using Dao.WordSystem;
 using UnityEngine;
 
 public class GameLoop : MonoBehaviour
@@ -8,8 +9,20 @@ public class GameLoop : MonoBehaviour
 
     public float cameraMoveSpeed = 60;
 
-    [Header("Room1")]
+    [Header("UI")]
+    public GameObject sentenceWordItem;
+    public GameObject dictionaryPage;
+    public GameObject dictionaryWordItem;
+    public GameObject wordContextPage;
+    public GameObject wordContextItem;
+    public GameObject uiTranslation;
+
+    [Header("EntryRoom")]
     public Vector2 doorHandleAngleRange;
+
+    [Header("LivingRoom")]
+    public Sprite boxSwitchOn;
+    public Sprite boxSwitchOff;
 
     private void Awake()
     {
@@ -18,23 +31,37 @@ public class GameLoop : MonoBehaviour
 
     private void Start()
     {
+        GetComponent<Test>().value++;
+
         CameraController.Instance.BindCamera(Camera.main);
         CameraController.Instance.MoveSpeed = cameraMoveSpeed;
 
-        SceneManager.Instance.AddScene("Room1", new Room1());
-        SceneManager.Instance.AddScene("Room2", new Room2());
-        SceneManager.Instance.LoadScene("Room1");
+        string dialogDataPath = Application.streamingAssetsPath + "/Data/DialogData.json";
+
+        WordManager.Instance.Import(Application.streamingAssetsPath + "/Data/Ciphertext.csv");
+        DialogLoader.Instance.Import(Application.streamingAssetsPath + "/Data/Sentence.json");
+        //DialogManager.Instance.Build(ciphertextPath, dialogDataPath);
+
+        //UITranslationManager.Instance.SetPrefab(uiTranslation);
+
+        SceneManager.Instance.AddScene("EntryRoom", new EntryRoom());
+        SceneManager.Instance.AddScene("LivingRoom", new LivingRoom());
+        SceneManager.Instance.LoadScene("LivingRoom");
+
+        
     }
 
     private void Update()
     {
         SceneManager.Instance.Update(Time.deltaTime);
         CameraController.Instance.Update(Time.deltaTime);
+        UIDialogManager.Instance.Update(Time.deltaTime);
+        //DialogManager.Instance.Update(Time.deltaTime);
 
-        //if (Input.GetKeyDown(KeyCode.Space))
-        //{
-        //    SceneManager.Instance.LoadScene("Room2");
-        //}
+        if (Input.GetKeyDown(KeyCode.Y))
+        {
+            SceneManager.Instance.GetScene<LivingRoom>("LivingRoom").OpenMedicalCase();
+        }
     }
 }
 

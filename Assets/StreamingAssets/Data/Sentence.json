@@ -1,0 +1,40 @@
+[
+    {
+        "id" : "LivingRoom-NearDoor",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "You", "Deny", "Fear" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "You", "Deny", "Back" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content" : ["You", "Want", "Front"],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content" : ["I", "Help", "You"],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content" : ["You", "Deny", "Fear"],
+                "translation" : ""
+            },
+            {
+                "type" : "Normal",
+                "content" : "我被身边的女性阻止了。"
+            },
+            {
+                "type" : "Normal",
+                "content" : "但即使她不提醒我，我也知道不能回头。"
+            }
+        ]
+    }
+]

@@ -23,6 +23,22 @@ namespace Dao.CameraSystem
             m_camera.transform.position = position;
         }
 
+        public Vector3 GetPosition()
+        {
+            return m_camera.transform.position;
+        }
+
+        public Rect GetScreenRect()
+        {
+            Vector3 leftBottom = m_camera.ScreenToWorldPoint(Vector3.zero);
+            Vector3 rightTop = m_camera.ScreenToWorldPoint(Vector3.right * Screen.width + Vector3.up * Screen.height);
+            float x = leftBottom.x;
+            float y = leftBottom.y;
+            float width = rightTop.x - leftBottom.x;
+            float height = rightTop.y - leftBottom.y;
+            return new Rect(x, y, width, height);
+        }
+
         public void Update(float deltaTime)
         {
             if (!Enable) return;
