@@ -36,5 +36,161 @@
                 "content" : "但即使她不提醒我，我也知道不能回头。"
             }
         ]
+    },
+    {
+        "id" : "Kitchen-Stove-Closed",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Fire", "Source" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "Fire", "Dangerous" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "You", "Want", "Open", "Fire", "Source" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Normal",
+                "content" : "身边的女性似乎在询问我什么，要回应吗？"
+            },
+            {
+                "type" : "Select",
+                "options" : [
+                    {
+                        "option" : "是",
+                        "sentence" : [
+                            {
+                                "type" : "Ciphertext",
+                                "content": [ "I", "Help", "You", "Open", "Fire", "Source" ],
+                                "translation" : ""
+                            }
+                        ]
+                    },
+                    {
+                        "option" : "否",
+                        "sentence" : []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "id" : "Kitchen-Fire-First",
+        "sentence" : [
+            {
+                "type" : "Normal",
+                "content" : "好烫！"
+            },
+            {
+                "type" : "Normal",
+                "content" : "我为什么要用手去碰火。"
+            },
+            {
+                "type" : "Normal",
+                "content" : "我好像受伤了。"
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "Dangerous" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "Fire", "Dangerous" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "You", "Deny", "Put", "Fire" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "You", "Hurt" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Normal",
+                "content" : "身边的女性似乎在询问我什么，要回应吗？"
+            },
+            {
+                "type" : "Select",
+                "options" : [
+                    {
+                        "option" : "是",
+                        "sentence" : [
+                            {
+                                "type" : "Ciphertext",
+                                "content": [ "You", "Deny", "Back" ],
+                                "translation" : ""
+                            },
+                            {
+                                "type" : "Ciphertext",
+                                "content": [ "I", "Heal", "You" ],
+                                "translation" : ""
+                            }
+                        ]
+                    },
+                    {
+                        "option" : "否",
+                        "sentence" : []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "id" : "Kitchen-Fire-NotFirst",
+        "sentence" : [
+            {
+                "type" : "Normal",
+                "content" : "还是不要碰了..."
+            }
+        ]
+    },
+    {
+        "id" : "Kitchen-Fire-First-Mama",
+        "sentence" : [
+            
+        ]
+    },
+    {
+        "id" : "Kitchen-Heal",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "I", "Like", "You" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "I", "Deny", "Want", "Look", "You", "Hurt" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "You", "Deny", "Front", "Dangerous" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "I", "Like", "You" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Normal",
+                "content" : "她一脸焦急的为我治疗伤口。"
+            },
+            {
+                "type" : "Normal",
+                "content" : "虽然她说的句子我只能听懂一部分，但是依然能感觉到她非常关心我。"
+            }
+        ]
     }
 ]

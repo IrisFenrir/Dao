@@ -39,14 +39,15 @@ public class GameLoop : MonoBehaviour
         string dialogDataPath = Application.streamingAssetsPath + "/Data/DialogData.json";
 
         WordManager.Instance.Import(Application.streamingAssetsPath + "/Data/Ciphertext.csv");
-        DialogLoader.Instance.Import(Application.streamingAssetsPath + "/Data/Sentence.json");
+        DialogUtility.Import(Application.streamingAssetsPath + "/Data/Sentence.json");
         //DialogManager.Instance.Build(ciphertextPath, dialogDataPath);
 
         //UITranslationManager.Instance.SetPrefab(uiTranslation);
 
         SceneManager.Instance.AddScene("EntryRoom", new EntryRoom());
         SceneManager.Instance.AddScene("LivingRoom", new LivingRoom());
-        SceneManager.Instance.LoadScene("LivingRoom");
+        SceneManager.Instance.AddScene("Kitchen", new Kitchen());
+        SceneManager.Instance.LoadScene("Kitchen");
 
         
     }

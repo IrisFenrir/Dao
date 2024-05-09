@@ -1,6 +1,7 @@
 ﻿using Dao.CameraSystem;
 using Dao.WordSystem;
 using System;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
@@ -169,7 +170,7 @@ namespace Dao.SceneSystem
                 // 关闭近景响应
                 nearDoorResponders.SetActive(false);
                 // 显示对话
-                UIDialogManager.Instance.StartDialog(DialogLoader.Instance.GetDialog("LivingRoom-NearDoor"));
+                UIDialogManager.Instance.StartDialog(DialogUtility.GetDialog("LivingRoom-NearDoor"));
                 // 等待对话结束
                 while (UIDialogManager.Instance.Enable)
                     await Task.Yield();
@@ -355,6 +356,7 @@ namespace Dao.SceneSystem
         {
             var background = FindUtility.Find("Background", m_root.transform);
             var root = FindUtility.Find("Stage", m_root.transform);
+            bool isWinned = false;
 
             // 显示舞台
             FindUtility.Find("奖状", m_root.transform).AddComponent<Responder>().onMouseDown = () =>
@@ -364,6 +366,12 @@ namespace Dao.SceneSystem
                 background.SetActive(false);
                 CameraController.Instance.Enable = false;
                 root.SetActive(true);
+                // 如果已经完成，只保留关闭界面的响应
+                if (isWinned)
+                {
+                    Array.ForEach(root.GetComponentsInChildren<Responder>(), res => res.enable = false);
+                    root.GetComponent<Responder>().enable = true;
+                }
             };
 
             // 关闭舞台
@@ -374,30 +382,227 @@ namespace Dao.SceneSystem
                 root.SetActive(false);
             };
 
-            var people1 = FindUtility.Find("People1", root.transform);
-            var people2 = FindUtility.Find("People2", root.transform);
-
+            // 更换人物
+            var people1 = FindUtility.Find("People1", root.transform).transform.GetChild(0).gameObject;
+            var people2 = FindUtility.Find("People2", root.transform).transform.GetChild(0).gameObject;
             int people1Index = 0;
+            int people2Index = 0;
+
+            // 更换卡片
+            var card1 = FindUtility.Find("Card1", root.transform);
+            var card2 = FindUtility.Find("Card2", root.transform);
+            var card3 = FindUtility.Find("Card3", root.transform);
+            int card1Index = 0;
+            int card2Index = 0;
+            int card3Index = 0;
+
+            // 中间人物
+            var people1father = FindUtility.Find("Father", people1.transform);
+            var people1mather = FindUtility.Find("Mather", people1.transform);
+            var people1kid = FindUtility.Find("Kid", people1.transform);
+            float[] people1height = new float[3] { people1father.transform.position.y, people1mather.transform.position.y, people1kid.transform.position.y};
             FindUtility.Find("Mather", people1.transform).transform.Translate(Vector3.down * 5f);
             FindUtility.Find("Kid", people1.transform).transform.Translate(Vector3.down * 5f);
             people1.AddComponent<Responder>().onMouseDown = async () =>
             {
-                var father = FindUtility.Find("Father", people1.transform);
-                var mather = FindUtility.Find("Mather", people1.transform);
-                var kid = FindUtility.Find("Kid", people1.transform);
-                Transform[] people = new Transform[3] { father.transform, mather.transform, kid.transform };
-                float[] height = new float[3] { father.transform.position.y, mather.transform.position.y + 5, kid.transform.position.y + 5 };
-
-                while (height[people1Index] - people[people1Index].transform.position.y < 5f)
+                Transform[] people = new Transform[3] { people1father.transform, people1mather.transform, people1kid.transform };
+                while (people1height[people1Index] - people[people1Index].transform.position.y < 5f)
                 {
                     people[people1Index].transform.Translate(Vector3.down * 5f * Time.deltaTime);
                     await Task.Yield();
                 }
                 people1Index = (people1Index + 1) % 3;
-                while (height[people1Index] > people[people1Index].transform.position.y)
+                while (people1height[people1Index] > people[people1Index].transform.position.y)
                 {
                     people[people1Index].transform.Translate(Vector3.up * 5f * Time.deltaTime);
                     await Task.Yield();
+                }
+                if (!isWinned && people1Index == 2 && people2Index == 1 && card1Index == 1 && card2Index == 0 && card3Index == 3)
+                {
+                    isWinned = true;
+                    // 禁用操作
+                    Array.ForEach(root.GetComponentsInChildren<Responder>(), res => res.enable = false);
+                    // 播放动画
+                    var anim = root.GetComponent<Animation>();
+                    anim.Play();
+                    while (anim.isPlaying)
+                        await Task.Yield();
+                    // 掉落碎片
+                    var piece = FindUtility.Find("Piece", root.transform).transform;
+                    while (piece.position.y - (-1) > 0.001f)
+                    {
+                        piece.position = new Vector3(piece.position.x, Mathf.Lerp(piece.position.y, -1, 0.1f), piece.position.z);
+                        await Task.Yield();
+                    }
+                    // 点击碎片
+                    piece.gameObject.AddComponent<Responder>().onMouseDown = () =>
+                    {
+                        // 碎片添加到道具栏
+
+                        // 关闭碎片
+                        piece.gameObject.SetActive(false);
+                        // 开启响应
+                        root.GetComponent<Responder>().enable = true;
+                    };
+                }
+            };
+
+            // 右侧人物
+            var people2father = FindUtility.Find("Father", people2.transform);
+            var people2mather = FindUtility.Find("Mather", people2.transform);
+            var people2kid = FindUtility.Find("Kid", people2.transform);
+            float[] people2height = new float[3] { people2father.transform.position.y, people2mather.transform.position.y, people2kid.transform.position.y };
+            FindUtility.Find("Mather", people2.transform).transform.Translate(Vector3.down * 5f);
+            FindUtility.Find("Kid", people2.transform).transform.Translate(Vector3.down * 5f);
+            people2.AddComponent<Responder>().onMouseDown = async () =>
+            {
+                Transform[] people = new Transform[3] { people2father.transform, people2mather.transform, people2kid.transform };
+                while (people2height[people2Index] - people[people2Index].transform.position.y < 5f)
+                {
+                    people[people2Index].transform.Translate(Vector3.down * 5f * Time.deltaTime);
+                    await Task.Yield();
+                }
+                people2Index = (people2Index + 1) % 3;
+                while (people2height[people2Index] > people[people2Index].transform.position.y)
+                {
+                    people[people2Index].transform.Translate(Vector3.up * 5f * Time.deltaTime);
+                    await Task.Yield();
+                }
+                if (!isWinned && people1Index == 2 && people2Index == 1 && card1Index == 1 && card2Index == 0 && card3Index == 3)
+                {
+                    isWinned = true;
+                    // 禁用操作
+                    Array.ForEach(root.GetComponentsInChildren<Responder>(), res => res.enable = false);
+                    // 播放动画
+                    var anim = root.GetComponent<Animation>();
+                    anim.Play();
+                    while (anim.isPlaying)
+                        await Task.Yield();
+                    // 掉落碎片
+                    var piece = FindUtility.Find("Piece", root.transform).transform;
+                    while (piece.position.y - (-1) > 0.001f)
+                    {
+                        piece.position = new Vector3(piece.position.x, Mathf.Lerp(piece.position.y, -1, 0.1f), piece.position.z);
+                        await Task.Yield();
+                    }
+                    // 点击碎片
+                    piece.gameObject.AddComponent<Responder>().onMouseDown = () =>
+                    {
+                        // 碎片添加到道具栏
+
+                        // 关闭碎片
+                        piece.gameObject.SetActive(false);
+                        // 开启响应
+                        root.GetComponent<Responder>().enable = true;
+                    };
+                }
+            };
+
+            // 左侧卡片
+            card1.AddComponent<Responder>().onMouseDown = async () =>
+            {
+                FindUtility.Find("Item" + (card1Index + 1).ToString(), card1.transform).SetActive(false);
+                card1Index = (card1Index + 1) % 5;
+                FindUtility.Find("Item" + (card1Index + 1).ToString(), card1.transform).SetActive(true);
+                if (!isWinned && people1Index == 2 && people2Index == 1 && card1Index == 1 && card2Index == 0 && card3Index == 3)
+                {
+                    // 禁用操作
+                    Array.ForEach(root.GetComponentsInChildren<Responder>(), res => res.enable = false);
+                    // 播放动画
+                    var anim = root.GetComponent<Animation>();
+                    anim.Play();
+                    while (anim.isPlaying)
+                        await Task.Yield();
+                    // 掉落碎片
+                    var piece = FindUtility.Find("Piece", root.transform).transform;
+                    while (piece.position.y - (-1) > 0.001f)
+                    {
+                        piece.position = new Vector3(piece.position.x, Mathf.Lerp(piece.position.y, -1, 0.1f), piece.position.z);
+                        await Task.Yield();
+                    }
+                    // 点击碎片
+                    piece.gameObject.AddComponent<Responder>().onMouseDown = () =>
+                    {
+                        // 碎片添加到道具栏
+
+                        // 关闭碎片
+                        piece.gameObject.SetActive(false);
+                        // 开启响应
+                        root.GetComponent<Responder>().enable = true;
+                    };
+                    isWinned = true;
+                }
+            };
+
+            // 中间卡片
+            card2.AddComponent<Responder>().onMouseDown = async () =>
+            {
+                FindUtility.Find("Item" + (card2Index + 1).ToString(), card2.transform).SetActive(false);
+                card2Index = (card2Index + 1) % 5;
+                FindUtility.Find("Item" + (card2Index + 1).ToString(), card2.transform).SetActive(true);
+                if (!isWinned && people1Index == 2 && people2Index == 1 && card1Index == 1 && card2Index == 0 && card3Index == 3)
+                {
+                    // 禁用操作
+                    Array.ForEach(root.GetComponentsInChildren<Responder>(), res => res.enable = false);
+                    // 播放动画
+                    var anim = root.GetComponent<Animation>();
+                    anim.Play();
+                    while (anim.isPlaying)
+                        await Task.Yield();
+                    // 掉落碎片
+                    var piece = FindUtility.Find("Piece", root.transform).transform;
+                    while (piece.position.y - (-1) > 0.001f)
+                    {
+                        piece.position = new Vector3(piece.position.x, Mathf.Lerp(piece.position.y, -1, 0.1f), piece.position.z);
+                        await Task.Yield();
+                    }
+                    // 点击碎片
+                    piece.gameObject.AddComponent<Responder>().onMouseDown = () =>
+                    {
+                        // 碎片添加到道具栏
+
+                        // 关闭碎片
+                        piece.gameObject.SetActive(false);
+                        // 开启响应
+                        root.GetComponent<Responder>().enable = true;
+                    };
+                    isWinned = true;
+                }
+            };
+
+            // 右侧卡片
+            card3.AddComponent<Responder>().onMouseDown = async () =>
+            {
+                FindUtility.Find("Item" + (card3Index + 1).ToString(), card3.transform).SetActive(false);
+                card3Index = (card3Index + 1) % 5;
+                FindUtility.Find("Item" + (card3Index + 1).ToString(), card3.transform).SetActive(true);
+                if (!isWinned && people1Index == 2 && people2Index == 1 && card1Index == 1 && card2Index == 0 && card3Index == 3)
+                {
+                    // 禁用操作
+                    Array.ForEach(root.GetComponentsInChildren<Responder>(), res => res.enable = false);
+                    // 播放动画
+                    var anim = root.GetComponent<Animation>();
+                    anim.Play();
+                    while (anim.isPlaying)
+                        await Task.Yield();
+                    // 掉落碎片
+                    var piece = FindUtility.Find("Piece", root.transform).transform;
+                    while (piece.position.y - (-1) > 0.001f)
+                    {
+                        piece.position = new Vector3(piece.position.x, Mathf.Lerp(piece.position.y, -1, 0.1f), piece.position.z);
+                        await Task.Yield();
+                    }
+                    // 点击碎片
+                    piece.gameObject.AddComponent<Responder>().onMouseDown = () =>
+                    {
+                        // 碎片添加到道具栏
+
+                        // 关闭碎片
+                        piece.gameObject.SetActive(false);
+                        // 开启响应
+                        root.GetComponent<Responder>().enable = true;
+                    };
+                    isWinned = true;
                 }
             };
         }

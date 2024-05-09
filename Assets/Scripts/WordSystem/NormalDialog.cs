@@ -25,7 +25,7 @@ namespace Dao.WordSystem
             {
                 builder.Append(item);
                 m_text.text = builder.ToString();
-                await Task.Delay(150);
+                await Task.Delay(50);
             }
         }
 

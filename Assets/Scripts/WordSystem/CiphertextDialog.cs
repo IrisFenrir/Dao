@@ -21,7 +21,7 @@ namespace Dao.WordSystem
             m_root.SetActive(false);
             FindUtility.Find("Translation", m_root.transform).SetActive(false);
             var ciphertext = FindUtility.Find("Ciphertext", m_root.transform);
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < ciphertext.transform.childCount; i++)
             {
                 var child = ciphertext.transform.GetChild(i).gameObject;
                 child.transform.GetChild(0).gameObject.SetActive(false);

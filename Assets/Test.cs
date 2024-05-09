@@ -15,8 +15,8 @@ public class Test : MonoBehaviour
         //dialog.Next[0] = dialog1;
         //UIDialogManager.Instance.StartDialog(dialog);
         WordManager.Instance.Import(Application.streamingAssetsPath + "/Data/Ciphertext.csv");
-        DialogLoader.Instance.Import(Application.streamingAssetsPath + "/Data/Sentence.json");
-        UIDialogManager.Instance.StartDialog(DialogLoader.Instance.GetDialog("LivingRoom-NearDoor"));
+        DialogUtility.Import(Application.streamingAssetsPath + "/Data/Sentence.json");
+        UIDialogManager.Instance.StartDialog(DialogUtility.GetDialog("LivingRoom-NearDoor"));
     }
 
     private void Update()

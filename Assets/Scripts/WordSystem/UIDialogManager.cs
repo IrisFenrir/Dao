@@ -45,16 +45,38 @@ namespace Dao.WordSystem
             if (!Enable || m_isPlaying) return;
             if (Current is NormalDialog || Current is CiphertextDialog)
             {
-                Current.Close();
-                var next = Current.Next[0];
-                if (next == null)
+                if (Current.Next[0] is SelectDialog select)
                 {
-                    Close();
+                    select.Show();
                 }
                 else
                 {
-                    StartDialog(next);
+                    Current.Close();
+                    var next = Current.Next[0];
+                    if (next == null)
+                    {
+                        Close();
+                    }
+                    else
+                    {
+                        StartDialog(next);
+                    }
                 }
+            }
+        }
+
+        public void Next(SelectDialog select, int index)
+        {
+            Current.Close();
+            select.Close();
+            var next = select.Next[index];
+            if (next == null)
+            {
+                Close();
+            }
+            else
+            {
+                StartDialog(next);
             }
         }
 
