@@ -9,6 +9,7 @@ namespace Dao.SceneSystem
     public class Kitchen : IScene
     {
         private GameObject m_root;
+        private bool m_isFireOpened;
 
         public Kitchen()
         {
@@ -34,17 +35,29 @@ namespace Dao.SceneSystem
             Stove();
         }
 
+        public void OpenFire()
+        {
+            m_isFireOpened = true;
+            FindUtility.Find("Environments/Kitchen/Scene/Background/Base/灶火").SetActive(true);
+        }
+
+        public void CloseFire()
+        {
+            m_isFireOpened = false;
+            FindUtility.Find("Environments/Kitchen/Scene/Background/Base/灶火").SetActive(false);
+        }
+
         private void Stove()
         {
             var stove = FindUtility.Find("炉灶", m_root.transform);
             var stoveSwitch = FindUtility.Find("炉灶开关", m_root.transform);
             var responders = FindUtility.Find("Environments/Kitchen/Scene/Background/Responders");
-            bool isOpened = false;
+            bool firstClickClosed = false;
+            bool firstClickOpened = false;
 
-            var fire = FindUtility.Find("Environments/Kitchen/Scene/Background/Base/灶火");
             stove.AddComponent<Responder>().onMouseDown = async () =>
             {
-                if (!isOpened)
+                if (!firstClickClosed && !m_isFireOpened)
                 {
                     // 关闭响应
                     responders.SetActive(false);
@@ -55,8 +68,8 @@ namespace Dao.SceneSystem
                     // 选择是
                     select.BindSelectAction(0, () =>
                     {
-                        isOpened = true;
-                        fire.SetActive(true);
+                        firstClickClosed = true;
+                        OpenFire();
                     });
                     // 开启对话
                     UIDialogManager.Instance.StartDialog(dialog);
@@ -66,8 +79,9 @@ namespace Dao.SceneSystem
                     responders.SetActive(true);
                     CameraController.Instance.Enable = true;
                 }
-                else
+                else if (!firstClickOpened && m_isFireOpened)
                 {
+                    firstClickOpened = true;
                     // 关闭响应
                     responders.SetActive(false);
                     CameraController.Instance.Enable = false;
@@ -151,6 +165,49 @@ namespace Dao.SceneSystem
                     }
                     black.SetActive(false);
                     // 恢复游戏
+                    responders.SetActive(true);
+                    CameraController.Instance.Enable = true;
+                }
+                else if (m_isFireOpened)
+                {
+                    // 关闭响应
+                    responders.SetActive(false);
+                    CameraController.Instance.Enable = false;
+                    // 开启对话
+                    var dialog = DialogUtility.GetDialog("Kitchen-Fire-NotFirst");
+                    UIDialogManager.Instance.StartDialog(dialog);
+                    while (UIDialogManager.Instance.Enable)
+                        await Task.Yield();
+                    // 开启响应
+                    responders.SetActive(true);
+                    CameraController.Instance.Enable = true;
+                }
+            };
+
+            stoveSwitch.AddComponent<Responder>().onMouseDown = async () =>
+            {
+                if (m_isFireOpened)
+                {
+                    CloseFire();
+                }
+                else
+                {
+                    // 关闭响应
+                    responders.SetActive(false);
+                    CameraController.Instance.Enable = false;
+                    // 设置对话
+                    var dialog = DialogUtility.GetDialog("Kitchen-Stove-Closed");
+                    var select = dialog.Next[0].Next[0].Next[0].Next[0] as SelectDialog;
+                    // 选择是
+                    select.BindSelectAction(0, () =>
+                    {
+                        OpenFire();
+                    });
+                    // 开启对话
+                    UIDialogManager.Instance.StartDialog(dialog);
+                    while (UIDialogManager.Instance.Enable)
+                        await Task.Yield();
+                    // 开启响应
                     responders.SetActive(true);
                     CameraController.Instance.Enable = true;
                 }
