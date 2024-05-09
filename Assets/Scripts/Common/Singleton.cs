@@ -1,4 +1,7 @@
-﻿public class Singleton<T> where T : class, new()
+﻿using Unity.VisualScripting;
+using UnityEngine;
+
+public class Singleton<T> where T : class, new()
 {
     private static T m_instance;
     private static readonly object m_lock = new object();

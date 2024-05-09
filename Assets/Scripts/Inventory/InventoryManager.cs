@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class InventoryManager : HSingleton<InventoryManager>
+public class InventoryManager : Singleton<InventoryManager>
 {
     public ItemDataList_SO itemData;
 

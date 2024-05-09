@@ -23,6 +23,7 @@ public class GameLoop : MonoBehaviour
 
         SceneManager.Instance.AddScene("Room1", new Room1());
         SceneManager.Instance.AddScene("Room2", new Room2());
+        SceneManager.Instance.AddScene("Room2", new Room3());
         SceneManager.Instance.LoadScene("Room1");
     }
 
