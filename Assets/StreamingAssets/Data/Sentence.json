@@ -186,5 +186,90 @@
                 "content" : "虽然她说的句子我只能听懂一部分，但是依然能感觉到她非常关心我。"
             }
         ]
+    },
+    {
+        "id" : "Kitchen-Cook-Success",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Salute" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "You", "Beautiful" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "I", "Like", "You" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Kitchen-Cook-Fail",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Salute" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "You", "Help", "I", "Make", "Food" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "I", "Like", "You" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Kitchen-Food",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Food", "Beautiful" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "You", "Beautiful" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Kitchen-Bird-Food",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Bird", "Like", "Food" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Kitchen-Bird-Body",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Blue", "Bird" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Kitchen-Bird-Hurt",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "He", "Hurt" ],
+                "translation" : ""
+            }
+        ]
     }
 ]

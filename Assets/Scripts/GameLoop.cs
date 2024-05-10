@@ -47,7 +47,8 @@ public class GameLoop : MonoBehaviour
         SceneManager.Instance.AddScene("EntryRoom", new EntryRoom());
         SceneManager.Instance.AddScene("LivingRoom", new LivingRoom());
         SceneManager.Instance.AddScene("Kitchen", new Kitchen());
-        SceneManager.Instance.LoadScene("Kitchen");
+        SceneManager.Instance.AddScene("Bedroom", new Bedroom());
+        SceneManager.Instance.LoadScene("Bedroom");
 
         
     }
