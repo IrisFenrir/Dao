@@ -11,21 +11,26 @@ namespace Dao.WordSystem
         private GameObject m_root;
         private bool m_isPlaying;
 
+        private GameObject m_blackBackground;
+
         public UIDialogManager()
         {
             m_root = FindUtility.Find("Canvas/DialogPanel");
+            m_blackBackground = FindUtility.Find("DialogBackground");
         }
 
         public void Show()
         {
             m_root.SetActive(true);
             Enable = true;
+            m_blackBackground.SetActive(true);
         }
 
         public void Close()
         {
             m_root.SetActive(false);
             Enable = false;
+            m_blackBackground.SetActive(false);
         }
 
         public async void StartDialog(IDialog dialog)

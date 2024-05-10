@@ -38,6 +38,26 @@
         ]
     },
     {
+        "id" : "LivingRoom-LightPlant",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Plant", "Like", "Light" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "LivingRoom-DarkPlant",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Plant", "Deny", "Like", "Light" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
         "id" : "Kitchen-Stove-Closed",
         "sentence" : [
             {

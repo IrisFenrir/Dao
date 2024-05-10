@@ -42,6 +42,11 @@ namespace Dao.SceneSystem
             Card();
             // 点击奖状
             Certificate();
+
+            // 调查喜阳植物
+            SetDialog("植物1", "LivingRoom-LightPlant");
+            // 调查喜阴植物
+            SetDialog("植物2", "LivingRoom-DarkPlant");
         }
 
         private void Box()
@@ -621,6 +626,27 @@ namespace Dao.SceneSystem
                 paper.SetActive(false);
                 // 纸条 放入道具栏
 
+            };
+        }
+
+        private void SetDialog(string itemName, string dialogID)
+        {
+            var responders = FindUtility.Find("Environments/LivingRoom/Scene/Background/Responders");
+            var item = FindUtility.Find("Environments/LivingRoom/Scene/Background/Responders/" + itemName);
+            var image = FindUtility.Find("Environments/LivingRoom/Scene/Background/Base/" + itemName).GetComponent<SpriteRenderer>();
+            item.AddComponent<Responder>().onMouseDown = async () =>
+            {
+                responders.SetActive(false);
+                CameraController.Instance.Enable = false;
+                var order = image.sortingOrder;
+                image.sortingOrder = 31;
+                var dialog = DialogUtility.GetDialog(dialogID);
+                UIDialogManager.Instance.StartDialog(dialog);
+                while (UIDialogManager.Instance.Enable)
+                    await Task.Yield();
+                image.sortingOrder = order;
+                responders.SetActive(true);
+                CameraController.Instance.Enable = true;
             };
         }
 
