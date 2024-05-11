@@ -1,4 +1,5 @@
 ﻿using Dao.CameraSystem;
+using Dao.InventorySystem;
 using Dao.SceneSystem;
 using Dao.WordSystem;
 using UnityEngine;
@@ -48,9 +49,7 @@ public class GameLoop : MonoBehaviour
         SceneManager.Instance.AddScene("LivingRoom", new LivingRoom());
         SceneManager.Instance.AddScene("Kitchen", new Kitchen());
         SceneManager.Instance.AddScene("Bedroom", new Bedroom());
-        SceneManager.Instance.LoadScene("LivingRoom");
-
-        
+        SceneManager.Instance.LoadScene("Bedroom");
     }
 
     private void Update()
@@ -58,7 +57,7 @@ public class GameLoop : MonoBehaviour
         SceneManager.Instance.Update(Time.deltaTime);
         CameraController.Instance.Update(Time.deltaTime);
         UIDialogManager.Instance.Update(Time.deltaTime);
-        //DialogManager.Instance.Update(Time.deltaTime);
+        InventoryManager.Instance.Update(Time.deltaTime);
 
         if (Input.GetKeyDown(KeyCode.Y))
         {

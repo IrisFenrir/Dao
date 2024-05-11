@@ -1,5 +1,7 @@
 ﻿using Dao.CameraSystem;
+using Dao.InventorySystem;
 using Dao.WordSystem;
+using System.Linq;
 using System.Threading.Tasks;
 using Unity.VisualScripting.Dependencies.Sqlite;
 using UnityEngine;
@@ -27,6 +29,8 @@ namespace Dao.SceneSystem
         private bool m_notePiece2Down;
         private bool m_notePiece3Down;
         private bool m_notePiece4Down;
+
+        private bool m_isDrawerLocked = true;
 
         public Bedroom()
         {
@@ -231,6 +235,17 @@ namespace Dao.SceneSystem
             Drawer();
             // 点击日记本
             Note();
+
+            // 调查枯死的植物
+            SetDialog("枯死的植物", "Bedroom-DeadPlant");
+            // 调查电风扇
+            SetDialog("电风扇", "Bedroom-ElectricFan");
+            // 调查健康的植物
+            SetDialog("健康的植物", "Bedroom-HealthyPlant");
+            // 调查照片
+            Photo();
+            // 调查窗外
+            Window();
         }
 
         private void Box()
@@ -256,7 +271,7 @@ namespace Dao.SceneSystem
             {
                 piece.SetActive(false);
                 // 添加道具
-
+                InventoryManager.Instance.AddItem(new Piece1());
             };
             // 拿钥匙
             var key = FindUtility.Find("Key", boxOpened.transform);
@@ -264,7 +279,7 @@ namespace Dao.SceneSystem
             {
                 key.SetActive(false);
                 // 添加道具
-
+                InventoryManager.Instance.AddItem(new Key());
             };
 
             // 显示界面
@@ -437,15 +452,36 @@ namespace Dao.SceneSystem
 
             var root = FindUtility.Find("Environments/Bedroom/Scene/Drawer");
 
+            var responders = FindUtility.Find("Environments/Bedroom/Scene/Background/Responders");
+            var item = FindUtility.Find("Environments/Bedroom/Scene/Background/Responders/抽屉");
+            var image = FindUtility.Find("Environments/Bedroom/Scene/Background/Base/抽屉").GetComponent<SpriteRenderer>();
+
             // 显示界面
-            FindUtility.Find("Environments/Bedroom/Scene/Background/Responders/抽屉").AddComponent<Responder>().onMouseDown = () =>
+            FindUtility.Find("Environments/Bedroom/Scene/Background/Responders/抽屉").AddComponent<Responder>().onMouseDown = async () =>
             {
-                Rect screenRect = CameraController.Instance.GetScreenRect();
-                root.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
-                background.SetActive(false);
-                player.SetActive(false);
-                CameraController.Instance.Enable = false;
-                root.SetActive(true);
+                if (m_isDrawerLocked)
+                {
+                    responders.SetActive(false);
+                    CameraController.Instance.Enable = false;
+                    var order = image.sortingOrder;
+                    image.sortingOrder = 31;
+                    var dialog = DialogUtility.GetDialog("Bedroom-Drawer");
+                    UIDialogManager.Instance.StartDialog(dialog);
+                    while (UIDialogManager.Instance.Enable)
+                        await Task.Yield();
+                    image.sortingOrder = order;
+                    responders.SetActive(true);
+                    CameraController.Instance.Enable = true;
+                }
+                else
+                {
+                    Rect screenRect = CameraController.Instance.GetScreenRect();
+                    root.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
+                    background.SetActive(false);
+                    player.SetActive(false);
+                    CameraController.Instance.Enable = false;
+                    root.SetActive(true);
+                }
             };
 
             // 关闭界面
@@ -550,6 +586,102 @@ namespace Dao.SceneSystem
             page1.SetActive(false);
             pageEffect.SetActive(false);
             page2.GetComponent<SpriteRenderer>().maskInteraction = SpriteMaskInteraction.VisibleOutsideMask;
+        }
+
+        private void SetDialog(string itemName, string dialogID)
+        {
+            var responders = FindUtility.Find("Environments/Bedroom/Scene/Background/Responders");
+            var item = FindUtility.Find("Environments/Bedroom/Scene/Background/Responders/" + itemName);
+            var image = FindUtility.Find("Environments/Bedroom/Scene/Background/Base/" + itemName).GetComponent<SpriteRenderer>();
+            item.AddComponent<Responder>().onMouseDown = async () =>
+            {
+                
+                responders.SetActive(false);
+                CameraController.Instance.Enable = false;
+                var order = image.sortingOrder;
+                image.sortingOrder = 31;
+                var dialog = DialogUtility.GetDialog(dialogID);
+                UIDialogManager.Instance.StartDialog(dialog);
+                while (UIDialogManager.Instance.Enable)
+                    await Task.Yield();
+                image.sortingOrder = order;
+                responders.SetActive(true);
+                CameraController.Instance.Enable = true;
+            };
+        }
+
+        private void Photo()
+        {
+            var background = FindUtility.Find("Environments/Bedroom/Scene/Background");
+            var player = FindUtility.Find("Player");
+
+            var root = FindUtility.Find("Environments/Bedroom/Scene/Photo");
+            var colliders = root.GetComponentsInChildren<Collider2D>().ToList();
+
+            // 显示界面
+            FindUtility.Find("Environments/Bedroom/Scene/Background/Responders/照片").AddComponent<Responder>().onMouseDown = () =>
+            {
+                Rect screenRect = CameraController.Instance.GetScreenRect();
+                root.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
+                background.SetActive(false);
+                player.SetActive(false);
+                CameraController.Instance.Enable = false;
+                root.SetActive(true);
+            };
+
+            // 关闭界面
+            root.AddComponent<Responder>().onMouseDown = () =>
+            {
+                background.SetActive(true);
+                player.SetActive(true);
+                CameraController.Instance.Enable = true;
+                root.SetActive(false);
+            };
+
+            // 调查 眼
+            FindUtility.Find("Eye", root.transform).AddComponent<Responder>().onMouseDown = async () =>
+            {
+                colliders.ForEach(c => c.enabled = false);
+                var dialog = DialogUtility.GetDialog("Bedroom-Photo-Eye");
+                UIDialogManager.Instance.StartDialog(dialog, false);
+                while (UIDialogManager.Instance.Enable)
+                    await Task.Yield();
+                colliders.ForEach(c => c.enabled = true);
+            };
+
+            // 调查 耳
+            FindUtility.Find("Ear", root.transform).AddComponent<Responder>().onMouseDown = async () =>
+            {
+                colliders.ForEach(c => c.enabled = false);
+                var dialog = DialogUtility.GetDialog("Bedroom-Photo-Ear");
+                UIDialogManager.Instance.StartDialog(dialog, false);
+                while (UIDialogManager.Instance.Enable)
+                    await Task.Yield();
+                colliders.ForEach(c => c.enabled = true);
+            };
+        }
+
+        private void Window()
+        {
+            var responders = FindUtility.Find("Environments/Bedroom/Scene/Background/Responders");
+            var item = FindUtility.Find("Environments/Bedroom/Scene/Background/Responders/窗外");
+            var image = FindUtility.Find("Environments/Bedroom/Scene/Background/Base/窗外").GetComponent<SpriteRenderer>();
+            item.AddComponent<Responder>().onMouseDown = async () =>
+            {
+                responders.SetActive(false);
+                CameraController.Instance.Enable = false;
+                var order = image.sortingOrder;
+                image.sortingOrder = 31;
+                // 播放音效
+
+                var dialog = DialogUtility.GetDialog("Bedroom-Window");
+                UIDialogManager.Instance.StartDialog(dialog);
+                while (UIDialogManager.Instance.Enable)
+                    await Task.Yield();
+                image.sortingOrder = order;
+                responders.SetActive(true);
+                CameraController.Instance.Enable = true;
+            };
         }
     }
 }

@@ -1,7 +1,9 @@
 ﻿using Dao.CameraSystem;
+using Dao.InventorySystem;
 using Dao.WordSystem;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
@@ -44,6 +46,48 @@ namespace Dao.SceneSystem
             Food();
             // 点击鸟
             Bird();
+
+            // 调查罐子
+            SetDialog("罐子", "Kitchen-Can");
+            // 调查小碗
+            SetDialog("小碗", "Kitchen-SmallBowl");
+            // 调查大碗
+            SetDialog("大碗", "Kitchen-BigBowl");
+            // 调查食物
+            SetDialog("食物", "Kitchen-Food2");
+            // 调查刀
+            SetDialog("刀", "Kitchen-Knife");
+            // 调查灯
+            SetDialog("灯", "Kitchen-Lamp");
+            // 调查枯死的植物
+            SetDialog("枯死的植物", "Kitchen-DiedPlant");
+            // 调查水壶
+            SetDialog("水壶", "Kitchen-Kettle");
+            // 调查盐罐
+            SetDialog("盐罐", "Kitchen-Salt");
+            // 调查糖罐
+            SetDialog("糖罐", "Kitchen-Sugar");
+            // 调查水龙头
+            SetDialog("水龙头", "Kitchen-Faucet");
+            // 调查小水杯
+            SetDialog("小水杯", "Kitchen-SmallCup");
+            // 调查红色苹果
+            SetDialog("红色苹果", "Kitchen-RedApple");
+            // 调查绿色苹果
+            SetDialog("绿色苹果", "Kitchen-GreenApple");
+            // 调查大锅
+            SetDialog("大锅", "Kitchen-BigPot");
+            // 调查小锅
+            SetDialog("小锅", "Kitchen-SmallPot");
+            // 调查大水杯
+            BigCup();
+            // 调查座椅
+            Chair();
+
+            // 调查绿茶
+            Tea();
+            // 调查墙上的纸条
+            Paper();
         }
 
         public override void OnUpdate(float deltaTime)
@@ -783,9 +827,12 @@ namespace Dao.SceneSystem
                 }
             };
 
-            // 显示界面
-            FindUtility.Find("Environments/Kitchen/Scene/Background/Responders/锅").AddComponent<Responder>().onMouseDown = async () =>
+            var dialog = DialogUtility.GetDialog("Kitchen-Pot");
+            var select = DialogUtility.SearchSelectDialog(dialog);
+            select.Next[0].onStop = async () =>
             {
+                while (UIDialogManager.Instance.Enable)
+                    await Task.Yield();
                 Rect screenRect = CameraController.Instance.GetScreenRect();
                 root.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
                 background.SetActive(false);
@@ -793,6 +840,17 @@ namespace Dao.SceneSystem
                 CameraController.Instance.Enable = false;
                 root.SetActive(true);
                 canClose = true;
+            };
+
+            // 显示界面
+            FindUtility.Find("Environments/Kitchen/Scene/Background/Responders/锅").AddComponent<Responder>().onMouseDown = async () =>
+            {
+                responders.SetActive(false);
+                CameraController.Instance.Enable = false;
+                UIDialogManager.Instance.StartDialog(dialog);
+                while (UIDialogManager.Instance.Enable)
+                    await Task.Yield();
+                responders.SetActive(true);
             };
 
             // 关闭界面
@@ -865,6 +923,8 @@ namespace Dao.SceneSystem
             piece.AddComponent<Responder>().onMouseDown = () =>
             {
                 // 获得道具
+                InventoryManager.Instance.AddItem(new Piece3());
+                FindUtility.Find("信纸", root.transform).SetActive(false);
             };
 
             // 调查食物
@@ -910,6 +970,173 @@ namespace Dao.SceneSystem
                 birdResponders.SetActive(true);
                 CameraController.Instance.Enable = false;
                 canClose = true;
+            };
+        }
+
+        private void SetDialog(string itemName, string dialogID)
+        {
+            var responders = FindUtility.Find("Environments/Kitchen/Scene/Background/Responders");
+            var item = FindUtility.Find("Environments/Kitchen/Scene/Background/Responders/" + itemName);
+            var image = FindUtility.Find("Environments/Kitchen/Scene/Background/Base/" + itemName).GetComponent<SpriteRenderer>();
+            item.AddComponent<Responder>().onMouseDown = async () =>
+            {
+                responders.SetActive(false);
+                CameraController.Instance.Enable = false;
+                var order = image.sortingOrder;
+                image.sortingOrder = 31;
+                var dialog = DialogUtility.GetDialog(dialogID);
+                UIDialogManager.Instance.StartDialog(dialog);
+                while (UIDialogManager.Instance.Enable)
+                    await Task.Yield();
+                image.sortingOrder = order;
+                responders.SetActive(true);
+                CameraController.Instance.Enable = true;
+            };
+        }
+
+        private void BigCup()
+        {
+            var background = FindUtility.Find("Environments/Kitchen/Scene/Background");
+            var player = FindUtility.Find("Player");
+            var root = FindUtility.Find("Environments/Kitchen/Scene/BigCup");
+            var colliders = root.GetComponentsInChildren<Collider2D>().ToList();
+
+            // 打开界面
+            FindUtility.Find("Environments/Kitchen/Scene/Background/Responders/大水杯").AddComponent<Responder>().onMouseDown = () =>
+            {
+                Rect screenRect = CameraController.Instance.GetScreenRect();
+                root.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
+                background.SetActive(false);
+                player.SetActive(false);
+                CameraController.Instance.Enable = false;
+                root.SetActive(true);
+            };
+
+            // 关闭界面
+            root.AddComponent<Responder>().onMouseDown = () =>
+            {
+                background.SetActive(true);
+                player.SetActive(true);
+                CameraController.Instance.Enable = true;
+                root.SetActive(false);
+            };
+
+            // 点击水杯
+            var body = FindUtility.Find("Body", root.transform);
+            body.AddComponent<Responder>().onMouseDown = async () =>
+            {
+                colliders.ForEach(c => c.enabled = false);
+                var dialog = DialogUtility.GetDialog("Kitchen-BigCup-Body");
+                UIDialogManager.Instance.StartDialog(dialog, false);
+                while (UIDialogManager.Instance.Enable)
+                    await Task.Yield();
+                colliders.ForEach(c => c.enabled = true);
+            };
+
+            // 点击红光
+            var red = FindUtility.Find("Red", root.transform);
+            red.AddComponent<Responder>().onMouseDown = async () =>
+            {
+                colliders.ForEach(c => c.enabled = false);
+                var dialog = DialogUtility.GetDialog("Kitchen-BigCup-Red");
+                UIDialogManager.Instance.StartDialog(dialog, false);
+                while (UIDialogManager.Instance.Enable)
+                    await Task.Yield();
+                colliders.ForEach(c => c.enabled = true);
+            };
+
+            // 点击绿光
+            var green = FindUtility.Find("Green", root.transform);
+            green.AddComponent<Responder>().onMouseDown = async () =>
+            {
+                colliders.ForEach(c => c.enabled = false);
+                var dialog = DialogUtility.GetDialog("Kitchen-BigCup-Green");
+                UIDialogManager.Instance.StartDialog(dialog, false);
+                while (UIDialogManager.Instance.Enable)
+                    await Task.Yield();
+                colliders.ForEach(c => c.enabled = true);
+            };
+
+            // 点击蓝光
+            var blue = FindUtility.Find("Blue", root.transform);
+            blue.AddComponent<Responder>().onMouseDown = async () =>
+            {
+                colliders.ForEach(c => c.enabled = false);
+                var dialog = DialogUtility.GetDialog("Kitchen-BigCup-Blue");
+                UIDialogManager.Instance.StartDialog(dialog, false);
+                while (UIDialogManager.Instance.Enable)
+                    await Task.Yield();
+                colliders.ForEach(c => c.enabled = true);
+            };
+        }
+
+        private void Chair()
+        {
+            var player = FindUtility.Find("Player");
+            var playerSit = FindUtility.Find("Environments/Kitchen/Scene/Background/Base/主角坐下");
+            var responders = FindUtility.Find("Environments/Kitchen/Scene/Background/Responders");
+
+            var chair1 = FindUtility.Find("座椅1", responders.transform);
+            var chair1Image = FindUtility.Find("Environments/Kitchen/Scene/Background/Base/座椅1").GetComponent<SpriteRenderer>();
+            var chair2 = FindUtility.Find("座椅2", responders.transform);
+            var chair2Image = FindUtility.Find("Environments/Kitchen/Scene/Background/Base/座椅2").GetComponent<SpriteRenderer>();
+
+            var dialog = DialogUtility.GetDialog("Kitchen-Chair");
+            var select = DialogUtility.SearchSelectDialog(dialog);
+            select.BindSelectAction(0, async () =>
+            {
+                player.SetActive(false);
+                playerSit.SetActive(true);
+                while (Input.GetAxis("Horizontal") == 0)
+                    await Task.Yield();
+                player.SetActive(true);
+                playerSit.SetActive(false);
+                responders.SetActive(true);
+                CameraController.Instance.Enable = true;
+            });
+            select.BindSelectAction(1, () =>
+            {
+                responders.SetActive(true);
+                CameraController.Instance.Enable = true;
+            });
+
+            Action sit = async () =>
+            {
+                responders.SetActive(false);
+                CameraController.Instance.Enable = false;
+                var order1 = chair1Image.sortingOrder;
+                var order2 = chair2Image.sortingOrder;
+                chair1Image.sortingOrder = 31;
+                chair2Image.sortingOrder = 31;
+                
+                UIDialogManager.Instance.StartDialog(dialog);
+                while (UIDialogManager.Instance.Enable)
+                    await Task.Yield();
+                chair1Image.sortingOrder = order1;
+                chair2Image.sortingOrder = order2;
+            };
+
+            chair1.AddComponent<Responder>().onMouseDown = sit;
+            chair2.AddComponent<Responder>().onMouseDown = sit;
+        }
+
+        private void Tea()
+        {
+            FindUtility.Find("Environments/Kitchen/Scene/Background/Responders/绿茶").AddComponent<Responder>().onMouseDown = () =>
+            {
+                FindUtility.Find("Environments/Kitchen/Scene/Background/Base/绿茶").SetActive(false);
+                // 添加道具
+
+            };
+        }
+
+        private void Paper()
+        {
+            FindUtility.Find("Environments/Kitchen/Scene/Background/Responders/纸条").AddComponent<Responder>().onMouseDown = () =>
+            {
+                FindUtility.Find("Environments/Kitchen/Scene/Background/Base/纸条").SetActive(false);
+                // 添加道具
+                InventoryManager.Instance.AddItem(new Menu());
             };
         }
     }

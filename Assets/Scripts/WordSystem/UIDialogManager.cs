@@ -19,11 +19,12 @@ namespace Dao.WordSystem
             m_blackBackground = FindUtility.Find("DialogBackground");
         }
 
-        public void Show()
+        public void Show(bool showBlack = true)
         {
             m_root.SetActive(true);
             Enable = true;
-            m_blackBackground.SetActive(true);
+            if (showBlack)
+                m_blackBackground.SetActive(true);
         }
 
         public void Close()
@@ -33,10 +34,10 @@ namespace Dao.WordSystem
             m_blackBackground.SetActive(false);
         }
 
-        public async void StartDialog(IDialog dialog)
+        public async void StartDialog(IDialog dialog, bool showBlack = true)
         {
             if (!Enable)
-                Show();
+                Show(showBlack);
             Current = dialog;
             Current.onStart?.Invoke();
             m_isPlaying = true;

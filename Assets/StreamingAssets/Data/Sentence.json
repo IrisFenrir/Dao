@@ -58,6 +58,186 @@
         ]
     },
     {
+        "id" : "LivingRoom-Light",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Light" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "I", "Like", "Light" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "LivingRoom-Lamp",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Light", "Source" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "LivingRoom-Dirt",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Dirt" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "Plant", "Plant", "Like", "Dirt" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "LivingRoom-Box",
+        "sentence" : [
+            {
+                "type" : "Normal",
+                "content": "木匣上的字我似乎在哪里见过。"
+            }
+        ]
+    },
+    {
+        "id" : "LivingRoom-Box-Fail",
+        "sentence" : [
+            {
+                "type" : "Normal",
+                "content": "没有反应。"
+            }
+        ]
+    },
+    {
+        "id" : "LivingRoom-Photo1",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Father", "Deny", "Back", "You", "I" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "Father", "Like", "You", "I" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "I", "Deny", "Back", "You" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "I", "Like", "You" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "LivingRoom-Photo3",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Bird", "Bird", "Like", "You" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "I", "Like", "You" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "LivingRoom-Photo4",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "You", "I", "He" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "I", "Like", "You", "You" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "LivingRoom-Photo5",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "You", "I" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "LivingRoom-Photo5-Tear",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Salt", "Water" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "LivingRoom-BigPlant",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Big", "Plant" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "LivingRoom-MedicalCase",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Heal", "Container" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "LivingRoom-Sofa",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "You", "I", "Want", "Rest" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Normal",
+                "content": "身边的女性似乎在询问我什么，要回应吗？"
+            },
+            {
+                "type" : "Select",
+                "options" : [
+                    {
+                        "option" : "是",
+                        "sentence" : []
+                    },
+                    {
+                        "option" : "否",
+                        "sentence" : []
+                    }
+                ]
+            }
+        ]
+    },
+    {
         "id" : "Kitchen-Stove-Closed",
         "sentence" : [
             {
@@ -288,6 +468,416 @@
             {
                 "type" : "Ciphertext",
                 "content": [ "He", "Hurt" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Kitchen-Can",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Container" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Kitchen-SmallBowl",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Small", "Food", "Container" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Kitchen-BigBowl",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Big", "Food", "Container" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Kitchen-Food2",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Big", "Food", "Container" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Kitchen-Knife",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Knife" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "You", "Deny", "Put", "Knife" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "Knife", "Dangerous" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "I", "Deny", "Want", "You", "Hurt" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "I", "Fear", "You", "Hurt" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Kitchen-Lamp",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Light", "Source" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Kitchen-DiedPlant",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Die", "Plant" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "I", "Deny", "Like", "Die", "Plant" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Kitchen-Kettle",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Water", "Container" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "Plant", "Plant", "Like", "Water" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Kitchen-Salt",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Salt" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Kitchen-Sugar",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Sugar" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Kitchen-Faucet",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Water", "Source" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Kitchen-SmallCup",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Small", "Water", "Container" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Kitchen-RedApple",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Red", "Food" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Kitchen-GreenApple",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Green", "Food" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Kitchen-BigPot",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Big", "Food", "Container" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "Make", "Food", "Food" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "Food", "Father", "Mather", "Kid" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Kitchen-SmallPot",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Small", "Food", "Container" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "Make", "Food" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "Food", "You", "I" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Kitchen-BigCup-Body",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Big", "Water", "Container" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Kitchen-BigCup-Red",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Red", "Light" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Kitchen-BigCup-Green",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Green", "Light" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Kitchen-BigCup-Blue",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Blue", "Light" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Kitchen-Chair",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "You", "I", "Want", "Rest" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Normal",
+                "content" : "身边的女性似乎在询问我什么，要回应吗？"
+            },
+            {
+                "type" : "Select",
+                "options" : [
+                    {
+                        "option" : "是",
+                        "sentence" : []
+                    },
+                    {
+                        "option" : "否",
+                        "sentence" : []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "id" : "Kitchen-Pot",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "You", "Want", "Help", "I", "Make", "Food" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Normal",
+                "content" : "身边的女性似乎在询问我什么，要回应吗？"
+            },
+            {
+                "type" : "Select",
+                "options" : [
+                    {
+                        "option" : "是",
+                        "sentence" : [
+                            {
+                                "type" : "Ciphertext",
+                                "content" : ["Salute"],
+                                "translation" : ""
+                            }
+                        ]
+                    },
+                    {
+                        "option" : "否",
+                        "sentence" : []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "id" : "Bedroom-DeadPlant",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Die", "Plant" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "I", "Deny", "Like", "Die", "Plant" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Bedroom-ElectricFan",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Wind", "Source" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Bedroom-Drawer",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "You", "I", "Deny", "Open", "Lock" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "You", "I", "Deny", "Put", "Key" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Bedroom-HealthyPlant",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Beautiful", "Plant" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "I", "Like", "Beautiful", "Plant" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Bedroom-Photo-Eye",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Deny", "Look" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Bedroom-Photo-Ear",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Deny", "Listen" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "Bedroom-Window",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Water", "Water" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "I", "Like", "Water", "Water" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "I", "Like", "Listen", "Water", "Water", "Wind" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "Water", "Water", "Wind", "Make", "I", "Rest" ],
                 "translation" : ""
             }
         ]
