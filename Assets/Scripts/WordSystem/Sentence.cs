@@ -38,5 +38,10 @@ namespace Dao.WordSystem
         {
             return m_words[index].GetTranslation();
         }
+
+        public void RecordWords()
+        {
+            m_words.ForEach(w => UIDictionary.Instance.AddWord(w));
+        }
     }
 }

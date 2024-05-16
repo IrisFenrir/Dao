@@ -17,6 +17,8 @@ namespace Dao.SceneSystem
         private GameObject m_mouseHandle;
         private bool m_isCookFinished;
 
+        private bool m_canShowInteractive;
+
         public Kitchen()
         {
             m_root = FindUtility.Find("Kitchen");
@@ -34,6 +36,7 @@ namespace Dao.SceneSystem
             CameraController.Instance.Enable = true;
 
             m_root.SetActive(true);
+            m_canShowInteractive = true;
         }
 
         private void Init()
@@ -93,6 +96,32 @@ namespace Dao.SceneSystem
         public override void OnUpdate(float deltaTime)
         {
             m_mouseHandle.transform.position = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+            if (Input.GetKeyDown(KeyCode.LeftArrow))
+            {
+                SceneManager.Instance.LoadScene("LivingRoom");
+                SceneManager.Instance.GetScene<LivingRoom>("LivingRoom").OpenMedicalCase();
+                if (m_isCookFinished)
+                    ShowBird();
+            }
+            else if (Input.GetKeyDown(KeyCode.RightArrow))
+            {
+                SceneManager.Instance.LoadScene("Bedroom");
+                if (m_isCookFinished)
+                    ShowBird();
+            }
+
+            if (Input.GetMouseButtonDown(2))
+            {
+                if (m_canShowInteractive)
+                {
+                    FindUtility.Find("Environments/Kitchen/Scene/Background/InteractiveItems").SetActive(true);
+                }
+            }
+            else if (Input.GetMouseButtonUp(2))
+            {
+                FindUtility.Find("Environments/Kitchen/Scene/Background/InteractiveItems").SetActive(false);
+            }
         }
 
         public void OpenFire()
@@ -127,6 +156,7 @@ namespace Dao.SceneSystem
                 {
                     // 关闭响应
                     responders.SetActive(false);
+                    m_canShowInteractive = false;
                     CameraController.Instance.Enable = false;
                     // 设置对话
                     var dialog = DialogUtility.GetDialog("Kitchen-Stove-Closed");
@@ -143,6 +173,7 @@ namespace Dao.SceneSystem
                         await Task.Yield();
                     // 开启响应
                     responders.SetActive(true);
+                    m_canShowInteractive = true;
                     CameraController.Instance.Enable = true;
                 }
                 else if (!firstClickOpened && m_isFireOpened)
@@ -150,6 +181,7 @@ namespace Dao.SceneSystem
                     firstClickOpened = true;
                     // 关闭响应
                     responders.SetActive(false);
+                    m_canShowInteractive = false;
                     CameraController.Instance.Enable = false;
                     // 开启对话
                     var dialog = DialogUtility.GetDialog("Kitchen-Fire-First");
@@ -164,7 +196,8 @@ namespace Dao.SceneSystem
                     mather.transform.position = new Vector3(player.transform.position.x, mather.transform.position.y, mather.transform.position.z);
                     mather.SetActive(true);
                     var matherAnim = mather.transform.Find("Model").GetComponent<Animator>();
-                    matherAnim.Play("Mather_WalkLeft");
+                    matherAnim.Play("Mather_WalkRight");
+                    mather.transform.localScale = new Vector3(-1, 1, 1);
                     float walkSpeed = 5f;
                     while (mather.transform.position.x > 46)
                     {
@@ -177,6 +210,8 @@ namespace Dao.SceneSystem
                     var playerAnim = player.transform.Find("Model").GetComponent<Animator>();
                     if (player.transform.position.x > 61.2f)
                     {
+                        playerAnim.Play("Player_WalkRight");
+                        player.transform.localScale = new Vector3(-1, 1, 1);
                         while (player.transform.position.x > 61.2f)
                         {
                             player.transform.Translate(Vector3.left * walkSpeed * Time.deltaTime);
@@ -185,6 +220,7 @@ namespace Dao.SceneSystem
                     }
                     else
                     {
+                        playerAnim.Play("Player_WalkRight");
                         while (player.transform.position.x < 61.2f)
                         {
                             player.transform.Translate(Vector3.right * walkSpeed * Time.deltaTime);
@@ -192,14 +228,17 @@ namespace Dao.SceneSystem
                         }
                     }
                     // 等待
+                    playerAnim.Play("Player_Idle");
                     await Task.Delay(1000);
                     // 妈妈回来
                     matherAnim.Play("Mather_WalkRight");
+                    mather.transform.localScale = new Vector3(1, 1, 1);
                     while (mather.transform.position.x < 59.2f)
                     {
                         mather.transform.Translate(Vector3.right * walkSpeed * Time.deltaTime);
                         await Task.Yield();
                     }
+                    matherAnim.Play("Mather_Idle");
                     // 治疗过程
                     var healDialog = DialogUtility.GetDialog("Kitchen-Heal");
                     UIDialogManager.Instance.StartDialog(healDialog);
@@ -232,12 +271,14 @@ namespace Dao.SceneSystem
                     black.SetActive(false);
                     // 恢复游戏
                     responders.SetActive(true);
+                    m_canShowInteractive = true;
                     CameraController.Instance.Enable = true;
                 }
                 else if (m_isFireOpened)
                 {
                     // 关闭响应
                     responders.SetActive(false);
+                    m_canShowInteractive = false;
                     CameraController.Instance.Enable = false;
                     // 开启对话
                     var dialog = DialogUtility.GetDialog("Kitchen-Fire-NotFirst");
@@ -246,6 +287,7 @@ namespace Dao.SceneSystem
                         await Task.Yield();
                     // 开启响应
                     responders.SetActive(true);
+                    m_canShowInteractive = true;
                     CameraController.Instance.Enable = true;
                 }
             };
@@ -260,6 +302,7 @@ namespace Dao.SceneSystem
                 {
                     // 关闭响应
                     responders.SetActive(false);
+                    m_canShowInteractive = false;
                     CameraController.Instance.Enable = false;
                     // 设置对话
                     var dialog = DialogUtility.GetDialog("Kitchen-Stove-Closed");
@@ -275,6 +318,7 @@ namespace Dao.SceneSystem
                         await Task.Yield();
                     // 开启响应
                     responders.SetActive(true);
+                    m_canShowInteractive = true;
                     CameraController.Instance.Enable = true;
                 }
             };
@@ -375,11 +419,13 @@ namespace Dao.SceneSystem
                 background.SetActive(true);
                 player.SetActive(true);
                 responders.SetActive(false);
+                m_canShowInteractive = false;
                 var dialog = DialogUtility.GetDialog("Kitchen-Cook-Fail");
                 UIDialogManager.Instance.StartDialog(dialog);
                 while (UIDialogManager.Instance.Enable)
                     await Task.Yield();
                 responders.SetActive(true);
+                m_canShowInteractive = true;
                 CameraController.Instance.Enable = true;
             };
 
@@ -407,6 +453,7 @@ namespace Dao.SceneSystem
                 background.SetActive(true);
                 player.SetActive(true);
                 responders.SetActive(false);
+                m_canShowInteractive = false;
                 var dialog = DialogUtility.GetDialog("Kitchen-Cook-Success");
                 UIDialogManager.Instance.StartDialog(dialog);
                 while (UIDialogManager.Instance.Enable)
@@ -436,6 +483,7 @@ namespace Dao.SceneSystem
                 }
                 player.GetComponentInChildren<Animator>().Play("Player_Idle");
                 responders.SetActive(true);
+                m_canShowInteractive = true;
             };
 
             // 开火关火
@@ -846,11 +894,13 @@ namespace Dao.SceneSystem
             FindUtility.Find("Environments/Kitchen/Scene/Background/Responders/锅").AddComponent<Responder>().onMouseDown = async () =>
             {
                 responders.SetActive(false);
+                m_canShowInteractive = false;
                 CameraController.Instance.Enable = false;
                 UIDialogManager.Instance.StartDialog(dialog);
                 while (UIDialogManager.Instance.Enable)
                     await Task.Yield();
                 responders.SetActive(true);
+                m_canShowInteractive = true;
             };
 
             // 关闭界面
@@ -861,6 +911,8 @@ namespace Dao.SceneSystem
                 player.SetActive(true);
                 CameraController.Instance.Enable = true;
                 root.SetActive(false);
+                responders.SetActive(true);
+                m_canShowInteractive = true;
             };
         }
 
@@ -873,11 +925,13 @@ namespace Dao.SceneSystem
             food.AddComponent<Responder>().onMouseDown = async () =>
             {
                 responders.SetActive(false);
+                m_canShowInteractive = false;
                 var dialog = DialogUtility.GetDialog("Kitchen-Food");
                 UIDialogManager.Instance.StartDialog(dialog);
                 while (UIDialogManager.Instance.Enable)
                     await Task.Yield();
                 responders.SetActive(true);
+                m_canShowInteractive = true;
             };
         }
 
@@ -898,6 +952,7 @@ namespace Dao.SceneSystem
                 root.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
                 background.SetActive(false);
                 responders.SetActive(false);
+                m_canShowInteractive = false;
                 player.SetActive(false);
                 CameraController.Instance.Enable = false;
                 root.SetActive(true);
@@ -909,6 +964,7 @@ namespace Dao.SceneSystem
                 if (!canClose) return;
                 background.SetActive(true);
                 responders.SetActive(true);
+                m_canShowInteractive = true;
                 player.SetActive(true);
                 CameraController.Instance.Enable = true;
                 root.SetActive(false);
@@ -981,6 +1037,7 @@ namespace Dao.SceneSystem
             item.AddComponent<Responder>().onMouseDown = async () =>
             {
                 responders.SetActive(false);
+                m_canShowInteractive = false;
                 CameraController.Instance.Enable = false;
                 var order = image.sortingOrder;
                 image.sortingOrder = 31;
@@ -990,6 +1047,7 @@ namespace Dao.SceneSystem
                     await Task.Yield();
                 image.sortingOrder = order;
                 responders.SetActive(true);
+                m_canShowInteractive = true;
                 CameraController.Instance.Enable = true;
             };
         }
@@ -1007,6 +1065,7 @@ namespace Dao.SceneSystem
                 Rect screenRect = CameraController.Instance.GetScreenRect();
                 root.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
                 background.SetActive(false);
+                m_canShowInteractive = false;
                 player.SetActive(false);
                 CameraController.Instance.Enable = false;
                 root.SetActive(true);
@@ -1016,6 +1075,7 @@ namespace Dao.SceneSystem
             root.AddComponent<Responder>().onMouseDown = () =>
             {
                 background.SetActive(true);
+                m_canShowInteractive = true;
                 player.SetActive(true);
                 CameraController.Instance.Enable = true;
                 root.SetActive(false);
@@ -1092,17 +1152,20 @@ namespace Dao.SceneSystem
                 player.SetActive(true);
                 playerSit.SetActive(false);
                 responders.SetActive(true);
+                m_canShowInteractive = true;
                 CameraController.Instance.Enable = true;
             });
             select.BindSelectAction(1, () =>
             {
                 responders.SetActive(true);
+                m_canShowInteractive = true;
                 CameraController.Instance.Enable = true;
             });
 
             Action sit = async () =>
             {
                 responders.SetActive(false);
+                m_canShowInteractive = false;
                 CameraController.Instance.Enable = false;
                 var order1 = chair1Image.sortingOrder;
                 var order2 = chair2Image.sortingOrder;
@@ -1126,7 +1189,7 @@ namespace Dao.SceneSystem
             {
                 FindUtility.Find("Environments/Kitchen/Scene/Background/Base/绿茶").SetActive(false);
                 // 添加道具
-
+                InventoryManager.Instance.AddItem(new Tea());
             };
         }
 

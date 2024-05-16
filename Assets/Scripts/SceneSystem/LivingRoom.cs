@@ -2,7 +2,6 @@
 using Dao.InventorySystem;
 using Dao.WordSystem;
 using System;
-using System.Security.Cryptography;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
@@ -13,10 +12,39 @@ namespace Dao.SceneSystem
     {
         private GameObject m_root;
 
+        private bool m_canShowInteractive;
+
+        private MoveTask m_moveTask = new();
+
         public LivingRoom()
         {
             m_root = FindUtility.Find("LivingRoom");
             InitItems();
+        }
+
+        public override void OnUpdate(float deltaTime)
+        {
+            if (Input.GetKeyDown(KeyCode.RightArrow))
+            {
+                SceneManager.Instance.LoadScene("Kitchen");
+            }
+
+            if (Input.GetMouseButtonDown(2))
+            {
+                if (m_canShowInteractive)
+                {
+                    FindUtility.Find("Environments/LivingRoom/Scene/Background/InteractiveItems").SetActive(true);
+                    if (FindUtility.Find("Environments/LivingRoom/Scene/Background/MedicalCase/Open").activeInHierarchy)
+                        FindUtility.Find("Environments/LivingRoom/Scene/Background/MedicalCase/InteractiveItems").SetActive(true);
+                }
+            }
+            else if (Input.GetMouseButtonUp(2))
+            {
+                FindUtility.Find("Environments/LivingRoom/Scene/Background/InteractiveItems").SetActive(false);
+                FindUtility.Find("Environments/LivingRoom/Scene/Background/MedicalCase/InteractiveItems").SetActive(false);
+            }
+
+            m_moveTask.Update(deltaTime);
         }
 
         public override void Enable()
@@ -26,13 +54,17 @@ namespace Dao.SceneSystem
             float screenWidth = Camera.main.ScreenToWorldPoint(new Vector3(Screen.width, 0, 0)).x - Camera.main.ScreenToWorldPoint(new Vector3(0, 0, 0)).x;
             CameraController.Instance.MoveRange = new Vector2(bound.Rect.xMin + screenWidth / 2, bound.Rect.xMax - screenWidth / 2);
             CameraController.Instance.SetPosition(new Vector3(CameraController.Instance.MoveRange.x, 0, -10));
-            CameraController.Instance.Enable = true;
+            CameraController.Instance.Enable = false;
 
             m_root.SetActive(true);
+            m_canShowInteractive = true;
         }
 
         private void InitItems()
         {
+            // 点击背景
+            Background();
+
             // 点击门
             Door();
             // 点击小木匣
@@ -68,6 +100,16 @@ namespace Dao.SceneSystem
             Sofa();
         }
 
+        private void Background()
+        {
+            FindUtility.Find("Environments/LivingRoom/Scene/Background/Responders/背景").AddComponent<Responder>().onMouseDown = () =>
+            {
+                float x = Camera.main.ScreenToWorldPoint(Input.mousePosition).x;
+                m_moveTask.Start(x);
+                m_moveTask.OnComplete = null;
+            };
+        }
+
         private void Box()
         {
             bool[] answer = new bool[5] { true, true, false, true, false };
@@ -80,13 +122,14 @@ namespace Dao.SceneSystem
             GameObject responders = FindUtility.Find("Responders", m_root.transform);
             Responder box = FindUtility.Find("小木匣", responders.transform).AddComponent<Responder>();
 
-            puzzle_box.GetComponent<Button>().onClick.AddListener(() =>
+            FindUtility.Find("Close", puzzle_box.transform).GetComponent<Button>().onClick.AddListener(() =>
             {
                 // 关闭UI
                 puzzle_box.SetActive(false);
                 // 开启响应
                 responders.SetActive(true);
                 CameraController.Instance.Enable = true;
+                m_canShowInteractive = true;
             });
 
             Transform switches = FindUtility.Find("Switch", puzzle_box.transform).transform;
@@ -134,28 +177,33 @@ namespace Dao.SceneSystem
             });
 
             
-            box.onMouseDown = async () =>
+            box.onMouseDown = () =>
             {
-                // 禁用相机
-                CameraController.Instance.Enable = false;
-                // 打开UI
-                puzzle_box.SetActive(true);
-                if (isOpened)
+                m_moveTask.Start(box.transform.position.x);
+                m_moveTask.OnComplete = async () =>
                 {
-                    outerBox.SetActive(false);
-                    innerBox.SetActive(true);
-                }
-                else
-                {
-                    outerBox.SetActive(true);
-                    innerBox.SetActive(false);
-                    var dialog = DialogUtility.GetDialog("LivingRoom-Box");
-                    UIDialogManager.Instance.StartDialog(dialog, false);
-                    while (UIDialogManager.Instance.Enable)
-                        await Task.Yield();
-                }
-                // 禁用响应
-                responders.SetActive(false);
+                    m_canShowInteractive = false;
+                    // 禁用相机
+                    CameraController.Instance.Enable = false;
+                    // 打开UI
+                    puzzle_box.SetActive(true);
+                    if (isOpened)
+                    {
+                        outerBox.SetActive(false);
+                        innerBox.SetActive(true);
+                    }
+                    else
+                    {
+                        outerBox.SetActive(true);
+                        innerBox.SetActive(false);
+                        var dialog = DialogUtility.GetDialog("LivingRoom-Box");
+                        UIDialogManager.Instance.StartDialog(dialog, false);
+                        while (UIDialogManager.Instance.Enable)
+                            await Task.Yield();
+                    }
+                    // 禁用响应
+                    responders.SetActive(false);
+                };
             };
 
             var tea = FindUtility.Find("Tea", innerBox.transform);
@@ -195,6 +243,7 @@ namespace Dao.SceneSystem
                 background.SetActive(true);
                 // 恢复响应
                 responders.SetActive(true);
+                m_canShowInteractive = true;
             };
 
             // 给门添加响应
@@ -209,6 +258,7 @@ namespace Dao.SceneSystem
                 nearDoor.SetActive(true);
                 background.SetActive(false);
                 responders.SetActive(false);
+                m_canShowInteractive = false;
                 //DialogManager.Instance.StartDialog("客厅/门锁/0");
             };
             // 近景门
@@ -229,6 +279,7 @@ namespace Dao.SceneSystem
                 nearDoor.SetActive(false);
                 background.SetActive(true);
                 responders.SetActive(true);
+                m_canShowInteractive = true;
             };
         }
 
@@ -237,6 +288,7 @@ namespace Dao.SceneSystem
             var root = FindUtility.Find("Canvas/Puzzle_Case");
             var before = FindUtility.Find("Before", root.transform);
             var after = FindUtility.Find("After", root.transform);
+            var responders = FindUtility.Find("Environments/LivingRoom/Scene/Background/Responders");
 
             // 获取 Button 和 Image
             var button1 = FindUtility.Find("Button1", root.transform).GetComponent<Button>();
@@ -299,14 +351,7 @@ namespace Dao.SceneSystem
             });
 
             // 打开箱子后
-            var close = FindUtility.Find("Close", after.transform);
             var tea = FindUtility.Find("Tea", after.transform);
-            close.GetComponent<Button>().onClick.AddListener(() =>
-            {
-                root.SetActive(false);
-                m_root.SetActive(true);
-                CameraController.Instance.Enable = true;
-            });
             tea.GetComponent<Button>().onClick.AddListener(() =>
             {
                 // 绿茶添加到道具栏
@@ -315,16 +360,29 @@ namespace Dao.SceneSystem
                 root.SetActive(false);
                 m_root.SetActive(true);
                 CameraController.Instance.Enable = true;
+                m_canShowInteractive = true;
             });
 
             // 点击场景 小木箱
-            FindUtility.Find("箱子", m_root.transform).AddComponent<Responder>().onMouseDown = async () =>
+            FindUtility.Find("箱子", m_root.transform).AddComponent<Responder>().onMouseDown = () =>
             {
-                await Task.Delay(100);
-                m_root.SetActive(false);
-                CameraController.Instance.Enable = false;
-                root.SetActive(true);
+                m_moveTask.Start(FindUtility.Find("箱子", m_root.transform).transform.position.x);
+                m_moveTask.OnComplete = () =>
+                {
+                    CameraController.Instance.Enable = false;
+                    root.SetActive(true);
+                    responders.SetActive(false);
+                    m_canShowInteractive = false;
+                };
             };
+
+            // 关闭箱子
+            FindUtility.Find("Close", root.transform).GetComponent<Button>().onClick.AddListener(() =>
+            {
+                root.SetActive(false);
+                responders.SetActive(true);
+                m_canShowInteractive = true;
+            });
         }
 
         private void Card()
@@ -335,19 +393,21 @@ namespace Dao.SceneSystem
             // 显示近景
             FindUtility.Find("卡片", m_root.transform).AddComponent<Responder>().onMouseDown = () =>
             {
-                Rect screenRect = CameraController.Instance.GetScreenRect();
-                root.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
-                root.SetActive(true);
-                background.SetActive(false);
-                CameraController.Instance.Enable = false;
+                m_moveTask.Start(FindUtility.Find("卡片", m_root.transform).transform.position.x);
+                m_moveTask.OnComplete = () =>
+                {
+                    Rect screenRect = CameraController.Instance.GetScreenRect();
+                    root.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, root.transform.position.z);
+                    root.SetActive(true);
+                    m_canShowInteractive = false;
+                };
             };
 
             // 关闭近景
-            FindUtility.Find("Background", root.transform).AddComponent<Responder>().onMouseDown = () =>
+            FindUtility.Find("Close", root.transform).AddComponent<Responder>().onMouseDown = () =>
             {
                 root.SetActive(false);
-                background.SetActive(true);
-                CameraController.Instance.Enable = true;
+                m_canShowInteractive = true;
             };
 
             // 点击卡片
@@ -360,46 +420,72 @@ namespace Dao.SceneSystem
             var card2 = FindUtility.Find("Card2", root.transform);
             var card3 = FindUtility.Find("Card3", root.transform);
             var card4 = FindUtility.Find("Card4", root.transform);
+            var close1 = FindUtility.Find("Close", card1.transform);
+            var close2 = FindUtility.Find("Close", card2.transform);
+            var close3 = FindUtility.Find("Close", card3.transform);
+            var close4 = FindUtility.Find("Close", card4.transform);
             image1.AddComponent<Responder>().onMouseDown = () =>
             {
-                cardBackground.SetActive(false);
                 card1.SetActive(true);
+                UIDictionary.Instance.AddWord("Wind");
+                UIDictionary.Instance.AddWord("Make");
+                UIDictionary.Instance.AddWord("Fire");
             };
-            card1.AddComponent<Responder>().onMouseDown = () =>
+            close1.AddComponent<Responder>().onMouseDown = () =>
             {
-                cardBackground.SetActive(true);
                 card1.SetActive(false);
             };
             image2.AddComponent<Responder>().onMouseDown = () =>
             {
-                cardBackground.SetActive(false);
                 card2.SetActive(true);
+                UIDictionary.Instance.AddWord("Water");
+                UIDictionary.Instance.AddWord("Die");
+                UIDictionary.Instance.AddWord("Fire");
             };
-            card2.AddComponent<Responder>().onMouseDown = () =>
+            close2.AddComponent<Responder>().onMouseDown = () =>
             {
-                cardBackground.SetActive(true);
                 card2.SetActive(false);
             };
             image3.AddComponent<Responder>().onMouseDown = () =>
             {
-                cardBackground.SetActive(false);
                 card3.SetActive(true);
+                UIDictionary.Instance.AddWord("Water");
+                UIDictionary.Instance.AddWord("Deny");
+                UIDictionary.Instance.AddWord("Dirt");
+                UIDictionary.Instance.AddWord("Back");
             };
-            card3.AddComponent<Responder>().onMouseDown = () =>
+            close3.AddComponent<Responder>().onMouseDown = () =>
             {
-                cardBackground.SetActive(true);
                 card3.SetActive(false);
             };
             image4.AddComponent<Responder>().onMouseDown = () =>
             {
-                cardBackground.SetActive(false);
                 card4.SetActive(true);
+                UIDictionary.Instance.AddWord("Kid");
+                UIDictionary.Instance.AddWord("Like");
+                UIDictionary.Instance.AddWord("Sugar");
             };
-            card4.AddComponent<Responder>().onMouseDown = () =>
+            close4.AddComponent<Responder>().onMouseDown = () =>
             {
-                cardBackground.SetActive(true);
                 card4.SetActive(false);
             };
+
+            new UIWord(WordManager.Instance.GetWord("Wind"), FindUtility.Find("UIWord1", card1.transform), FindUtility.Find("WorldCanvas/UIWord"));
+            new UIWord(WordManager.Instance.GetWord("Make"), FindUtility.Find("UIWord2", card1.transform), FindUtility.Find("WorldCanvas/UIWord"));
+            new UIWord(WordManager.Instance.GetWord("Fire"), FindUtility.Find("UIWord3", card1.transform), FindUtility.Find("WorldCanvas/UIWord"));
+
+            new UIWord(WordManager.Instance.GetWord("Water"), FindUtility.Find("UIWord1", card2.transform), FindUtility.Find("WorldCanvas/UIWord"));
+            new UIWord(WordManager.Instance.GetWord("Die"), FindUtility.Find("UIWord2", card2.transform), FindUtility.Find("WorldCanvas/UIWord"));
+            new UIWord(WordManager.Instance.GetWord("Fire"), FindUtility.Find("UIWord3", card2.transform), FindUtility.Find("WorldCanvas/UIWord"));
+
+            new UIWord(WordManager.Instance.GetWord("Water"), FindUtility.Find("UIWord1", card3.transform), FindUtility.Find("WorldCanvas/UIWord"));
+            new UIWord(WordManager.Instance.GetWord("Deny"), FindUtility.Find("UIWord2", card3.transform), FindUtility.Find("WorldCanvas/UIWord"));
+            new UIWord(WordManager.Instance.GetWord("Dirt"), FindUtility.Find("UIWord3", card3.transform), FindUtility.Find("WorldCanvas/UIWord"));
+            new UIWord(WordManager.Instance.GetWord("Back"), FindUtility.Find("UIWord4", card3.transform), FindUtility.Find("WorldCanvas/UIWord"));
+
+            new UIWord(WordManager.Instance.GetWord("Kid"), FindUtility.Find("UIWord1", card4.transform), FindUtility.Find("WorldCanvas/UIWord"));
+            new UIWord(WordManager.Instance.GetWord("Like"), FindUtility.Find("UIWord2", card4.transform), FindUtility.Find("WorldCanvas/UIWord"));
+            new UIWord(WordManager.Instance.GetWord("Sugar"), FindUtility.Find("UIWord3", card4.transform), FindUtility.Find("WorldCanvas/UIWord"));
         }
 
         private void Certificate()
@@ -416,6 +502,7 @@ namespace Dao.SceneSystem
                 background.SetActive(false);
                 CameraController.Instance.Enable = false;
                 root.SetActive(true);
+                m_canShowInteractive = false;
                 // 如果已经完成，只保留关闭界面的响应
                 if (isWinned)
                 {
@@ -430,6 +517,7 @@ namespace Dao.SceneSystem
                 background.SetActive(true);
                 CameraController.Instance.Enable = true;
                 root.SetActive(false);
+                m_canShowInteractive = true;
             };
 
             // 更换人物
@@ -673,6 +761,7 @@ namespace Dao.SceneSystem
             {
                 responders.SetActive(false);
                 CameraController.Instance.Enable = false;
+                m_canShowInteractive = false;
                 var order = image.sortingOrder;
                 image.sortingOrder = 31;
                 var dialog = DialogUtility.GetDialog("LivingRoom-MedicalCase");
@@ -682,6 +771,7 @@ namespace Dao.SceneSystem
                 image.sortingOrder = order;
                 responders.SetActive(true);
                 CameraController.Instance.Enable = true;
+                m_canShowInteractive = true;
             };
 
             var paper = FindUtility.Find("Paper", open.transform);
@@ -702,6 +792,7 @@ namespace Dao.SceneSystem
             {
                 responders.SetActive(false);
                 CameraController.Instance.Enable = false;
+                m_canShowInteractive = false;
                 var order = image.sortingOrder;
                 image.sortingOrder = 31;
                 var dialog = DialogUtility.GetDialog(dialogID);
@@ -711,6 +802,7 @@ namespace Dao.SceneSystem
                 image.sortingOrder = order;
                 responders.SetActive(true);
                 CameraController.Instance.Enable = true;
+                m_canShowInteractive = true;
             };
         }
 
@@ -725,6 +817,7 @@ namespace Dao.SceneSystem
             {
                 responders.SetActive(false);
                 CameraController.Instance.Enable = false;
+                m_canShowInteractive = false;
                 var order1 = image1.sortingOrder;
                 var order2 = image2.sortingOrder;
                 image1.sortingOrder = 31;
@@ -737,11 +830,13 @@ namespace Dao.SceneSystem
                 image2.sortingOrder = order2;
                 responders.SetActive(true);
                 CameraController.Instance.Enable = true;
+                m_canShowInteractive = true;
             };
             item2.AddComponent<Responder>().onMouseDown = async () =>
             {
                 responders.SetActive(false);
                 CameraController.Instance.Enable = false;
+                m_canShowInteractive = false;
                 var order1 = image1.sortingOrder;
                 var order2 = image2.sortingOrder;
                 image1.sortingOrder = 31;
@@ -754,6 +849,7 @@ namespace Dao.SceneSystem
                 image2.sortingOrder = order2;
                 responders.SetActive(true);
                 CameraController.Instance.Enable = true;
+                m_canShowInteractive = true;
             };
         }
 
@@ -766,6 +862,7 @@ namespace Dao.SceneSystem
             // 显示界面
             FindUtility.Find("Environments/LivingRoom/Scene/Background/Responders/照片1").AddComponent<Responder>().onMouseDown = async () =>
             {
+                m_canShowInteractive = false;
                 Rect screenRect = CameraController.Instance.GetScreenRect();
                 root.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
                 background.SetActive(false);
@@ -787,6 +884,7 @@ namespace Dao.SceneSystem
                 CameraController.Instance.Enable = true;
                 player.SetActive(true);
                 root.SetActive(false);
+                m_canShowInteractive = true;
             };
         }
 
@@ -799,6 +897,7 @@ namespace Dao.SceneSystem
             // 显示界面
             FindUtility.Find("Environments/LivingRoom/Scene/Background/Responders/照片3").AddComponent<Responder>().onMouseDown = async () =>
             {
+                m_canShowInteractive = false;
                 Rect screenRect = CameraController.Instance.GetScreenRect();
                 root.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
                 background.SetActive(false);
@@ -816,6 +915,7 @@ namespace Dao.SceneSystem
             // 关闭界面
             root.AddComponent<Responder>().onMouseDown = () =>
             {
+                m_canShowInteractive = true;
                 background.SetActive(true);
                 CameraController.Instance.Enable = true;
                 player.SetActive(true);
@@ -832,6 +932,7 @@ namespace Dao.SceneSystem
             // 显示界面
             FindUtility.Find("Environments/LivingRoom/Scene/Background/Responders/照片4").AddComponent<Responder>().onMouseDown = async () =>
             {
+                m_canShowInteractive = false;
                 Rect screenRect = CameraController.Instance.GetScreenRect();
                 root.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
                 background.SetActive(false);
@@ -849,6 +950,7 @@ namespace Dao.SceneSystem
             // 关闭界面
             root.AddComponent<Responder>().onMouseDown = () =>
             {
+                m_canShowInteractive = true;
                 background.SetActive(true);
                 CameraController.Instance.Enable = true;
                 player.SetActive(true);
@@ -865,6 +967,7 @@ namespace Dao.SceneSystem
             // 显示界面
             FindUtility.Find("Environments/LivingRoom/Scene/Background/Responders/照片5").AddComponent<Responder>().onMouseDown = async () =>
             {
+                m_canShowInteractive = false;
                 Rect screenRect = CameraController.Instance.GetScreenRect();
                 root.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
                 background.SetActive(false);
@@ -882,6 +985,7 @@ namespace Dao.SceneSystem
             // 关闭界面
             root.AddComponent<Responder>().onMouseDown = () =>
             {
+                m_canShowInteractive = true;
                 background.SetActive(true);
                 CameraController.Instance.Enable = true;
                 player.SetActive(true);
@@ -919,17 +1023,20 @@ namespace Dao.SceneSystem
                 player.SetActive(true);
                 playerSit.SetActive(false);
                 responders.SetActive(true);
+                m_canShowInteractive = true;
                 CameraController.Instance.Enable = true;
             });
             select.BindSelectAction(1, () =>
             {
                 responders.SetActive(true);
+                m_canShowInteractive = true;
                 CameraController.Instance.Enable = true;
             });
 
             FindUtility.Find("Environments/LivingRoom/Scene/Background/Responders/沙发").AddComponent<Responder>().onMouseDown = async () =>
             {
                 responders.SetActive(false);
+                m_canShowInteractive = false;
                 CameraController.Instance.Enable = false;
                 var order = image.sortingOrder;
                 image.sortingOrder = 31;

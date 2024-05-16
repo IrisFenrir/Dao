@@ -32,8 +32,6 @@ public class GameLoop : MonoBehaviour
 
     private void Start()
     {
-        GetComponent<Test>().value++;
-
         CameraController.Instance.BindCamera(Camera.main);
         CameraController.Instance.MoveSpeed = cameraMoveSpeed;
 
@@ -49,7 +47,7 @@ public class GameLoop : MonoBehaviour
         SceneManager.Instance.AddScene("LivingRoom", new LivingRoom());
         SceneManager.Instance.AddScene("Kitchen", new Kitchen());
         SceneManager.Instance.AddScene("Bedroom", new Bedroom());
-        SceneManager.Instance.LoadScene("Bedroom");
+        SceneManager.Instance.LoadScene("EntryRoom");
     }
 
     private void Update()

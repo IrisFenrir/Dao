@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Dao.WordSystem
 {
@@ -17,6 +18,11 @@ namespace Dao.WordSystem
         {
             m_root = FindUtility.Find("Canvas/DialogPanel");
             m_blackBackground = FindUtility.Find("DialogBackground");
+
+            FindUtility.Find("WorldCanvas/SecretSentence/Ciphertext/Ma/Next").GetComponent<Button>().onClick.AddListener(() =>
+            {
+                Next();
+            });
         }
 
         public void Show(bool showBlack = true)

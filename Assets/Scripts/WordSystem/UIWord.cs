@@ -17,6 +17,7 @@ namespace Dao.WordSystem
             responder.onMouseEnter = () =>
             {
                 // 显示文字
+                text.transform.position = gameObject.transform.position;
                 text.GetComponentInChildren<Text>().text = word.GetTranslation();
                 text.SetActive(true);
             };
@@ -24,6 +25,10 @@ namespace Dao.WordSystem
             {
                 // 隐藏文字
                 text.SetActive(false);
+            };
+            responder.onMouseDown = () =>
+            {
+                UIDictionary.Instance.Show();
             };
         }
     }

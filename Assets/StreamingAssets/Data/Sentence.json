@@ -1,5 +1,70 @@
 [
     {
+        "id" : "EntryRoom-Mather-First",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content": [ "Salute" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content": [ "I", "Help", "You" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content" : ["You", "Deny", "Fear"],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content" : ["You", "Deny", "Back"],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content" : ["You", "Beautiful" ],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content" : ["I", "Like", "You"],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content" : ["You", "Put", "Key"],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content" : ["You", "Open", "Lock" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
+        "id" : "EntryRoom-Mather-NotFirst",
+        "sentence" : [
+            {
+                "type" : "Ciphertext",
+                "content" : ["You", "Put", "Key"],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content" : ["You", "Put", "Key"],
+                "translation" : ""
+            },
+            {
+                "type" : "Ciphertext",
+                "content" : ["Salute" ],
+                "translation" : ""
+            }
+        ]
+    },
+    {
         "id" : "LivingRoom-NearDoor",
         "sentence" : [
             {

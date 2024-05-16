@@ -1,4 +1,7 @@
-﻿using UnityEngine;
+﻿using Dao.SceneSystem;
+using Dao.WordSystem;
+using UnityEngine;
+using UnityEngine.UI;
 
 namespace Dao.InventorySystem
 {
@@ -7,7 +10,7 @@ namespace Dao.InventorySystem
         public string name;
         public GameObject gameObject;
         
-        public virtual void Use() { }
+        public virtual void Use(int index) { }
     }
 
     public class Tea : Item
@@ -79,6 +82,50 @@ namespace Dao.InventorySystem
         {
             name = "Key";
             gameObject = FindUtility.Find("Inventory/Key");
+        }
+
+        public override void Use(int index)
+        {
+            var current = SceneManager.Instance.Current.name;
+            if (current == "EntryRoom")
+            {
+                if (FindUtility.Find("Environments/EntryRoom/Scene/NearDoor").activeInHierarchy)
+                {
+                    FindUtility.Find("Environments/EntryRoom/Scene/NearDoor/MouseHandle/Key").SetActive(true);
+                    FindUtility.Find("Environments/EntryRoom/Scene/NearDoor/CloseButton").GetComponent<Responder>().enable = false;
+                    InventoryManager.Instance.Remove(index);
+                }
+            }
+        }
+    }
+
+    public class Diary : Item
+    {
+        private GameObject m_open;
+        private GameObject m_close;
+
+        public Diary()
+        {
+            name = "Dairy";
+
+            m_open = FindUtility.Find("Inventory/Item0/Open");
+            m_close = FindUtility.Find("Inventory/Item0/Close");
+        }
+
+        public override void Use(int index)
+        {
+            if (UIDictionary.Instance.Enable)
+            {
+                m_open.SetActive(false);
+                m_close.SetActive(true);
+                UIDictionary.Instance.Close();
+            }
+            else
+            {
+                m_open.SetActive(true);
+                m_close.SetActive(false);
+                UIDictionary.Instance.Show();
+            }
         }
     }
 }

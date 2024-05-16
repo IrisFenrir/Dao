@@ -3,7 +3,6 @@ using Dao.InventorySystem;
 using Dao.WordSystem;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.VisualScripting.Dependencies.Sqlite;
 using UnityEngine;
 
 namespace Dao.SceneSystem
@@ -32,6 +31,8 @@ namespace Dao.SceneSystem
 
         private bool m_isDrawerLocked = true;
 
+        private bool m_canShowInteractive = true;
+
         public Bedroom()
         {
             m_root = FindUtility.Find("Bedroom");
@@ -48,6 +49,7 @@ namespace Dao.SceneSystem
             CameraController.Instance.Enable = true;
 
             m_root.SetActive(true);
+            m_canShowInteractive = true;
         }
 
         public override void OnUpdate(float deltaTime)
@@ -225,6 +227,24 @@ namespace Dao.SceneSystem
                 MoveNotePiece4();
             }
             #endregion
+
+            if (Input.GetKeyDown(KeyCode.LeftArrow))
+            {
+                SceneManager.Instance.LoadScene("Kitchen");
+            }
+
+            if (Input.GetMouseButtonDown(2))
+            {
+                if (m_canShowInteractive && FindUtility.Find("Environments/Bedroom/Scene/Background").activeInHierarchy &&
+                    !UIDialogManager.Instance.Enable)
+                {
+                    FindUtility.Find("Environments/Bedroom/Scene/Background/InteractiveItems").SetActive(true);
+                }
+            }
+            else if (Input.GetMouseButtonUp(2))
+            {
+                FindUtility.Find("Environments/Bedroom/Scene/Background/InteractiveItems").SetActive(false);
+            }
         }
 
         private void Init()
