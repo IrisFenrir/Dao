@@ -64,7 +64,7 @@ namespace Dao.WordSystem
                         UIDialogManager.Instance.Next(this, index);
                     });
                     // 修改选项
-                    button.GetComponent<Text>().text = m_options[i];
+                    button.GetComponentInChildren<Text>().text = m_options[i];
                     // 显示选项
                     button.gameObject.SetActive(true);
                 }

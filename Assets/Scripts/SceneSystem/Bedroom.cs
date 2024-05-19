@@ -1,4 +1,5 @@
 ﻿using Dao.CameraSystem;
+using Dao.Common;
 using Dao.InventorySystem;
 using Dao.WordSystem;
 using System.Linq;
@@ -29,9 +30,11 @@ namespace Dao.SceneSystem
         private bool m_notePiece3Down;
         private bool m_notePiece4Down;
 
-        private bool m_isDrawerLocked = true;
+        private bool m_isDrawerLocked = false;
 
         private bool m_canShowInteractive = true;
+
+        private MoveTask m_moveTask = new();
 
         public Bedroom()
         {
@@ -46,7 +49,7 @@ namespace Dao.SceneSystem
             float screenWidth = Camera.main.ScreenToWorldPoint(new Vector3(Screen.width, 0, 0)).x - Camera.main.ScreenToWorldPoint(new Vector3(0, 0, 0)).x;
             CameraController.Instance.MoveRange = new Vector2(bound.Rect.xMin + screenWidth / 2, bound.Rect.xMax - screenWidth / 2);
             CameraController.Instance.SetPosition(new Vector3(CameraController.Instance.MoveRange.x, 0, -10));
-            CameraController.Instance.Enable = true;
+            CameraController.Instance.Enable = false;
 
             m_root.SetActive(true);
             m_canShowInteractive = true;
@@ -85,7 +88,7 @@ namespace Dao.SceneSystem
                 
                 if (m_clickUpper &&
                     mousePosition.x > m_mouseDownPosition.x && 
-                    Vector3.Distance(mousePosition, m_mouseDownPosition) > 2f &&
+                    Vector3.Distance(mousePosition, m_mouseDownPosition) > 1.2f &&
                     Vector3.Angle(mousePosition - m_mouseDownPosition, new Vector3(1, 0, 0)) < 10f)
                 {
                     Upper_Right();
@@ -93,7 +96,7 @@ namespace Dao.SceneSystem
                 }
                 else if (m_clickUpper &&
                     mousePosition.x < m_mouseDownPosition.x &&
-                    Vector3.Distance(mousePosition, m_mouseDownPosition) > 2f &&
+                    Vector3.Distance(mousePosition, m_mouseDownPosition) > 1.2f &&
                     Vector3.Angle(mousePosition - m_mouseDownPosition, new Vector3(-1, 0, 0)) < 10f)
                 {
                     Upper_Left();
@@ -101,7 +104,7 @@ namespace Dao.SceneSystem
                 }
                 else if (m_clickLeft &&
                     mousePosition.y < m_mouseDownPosition.y &&
-                    Vector3.Distance(mousePosition, m_mouseDownPosition) > 1.5f &&
+                    Vector3.Distance(mousePosition, m_mouseDownPosition) > 1.2f &&
                     Vector3.Angle(mousePosition - m_mouseDownPosition, new Vector3(0, -1, 0)) < 10f)
                 {
                     Left_Down();
@@ -109,7 +112,7 @@ namespace Dao.SceneSystem
                 }
                 else if (m_clickLeft &&
                     mousePosition.y > m_mouseDownPosition.y &&
-                    Vector3.Distance(mousePosition, m_mouseDownPosition) > 1.5f &&
+                    Vector3.Distance(mousePosition, m_mouseDownPosition) > 1.2f &&
                     Vector3.Angle(mousePosition - m_mouseDownPosition, new Vector3(0, 1, 0)) < 10f)
                 {
                     Left_Up();
@@ -117,7 +120,7 @@ namespace Dao.SceneSystem
                 }
                 else if (m_clickRight &&
                     mousePosition.y < m_mouseDownPosition.y &&
-                    Vector3.Distance(mousePosition, m_mouseDownPosition) > 1f &&
+                    Vector3.Distance(mousePosition, m_mouseDownPosition) > 1.2f &&
                     Vector3.Angle(mousePosition - m_mouseDownPosition, new Vector3(0, -1, 0)) < 10f)
                 {
                     Right_Down();
@@ -125,7 +128,7 @@ namespace Dao.SceneSystem
                 }
                 else if (m_clickRight &&
                     mousePosition.y > m_mouseDownPosition.y &&
-                    Vector3.Distance(mousePosition, m_mouseDownPosition) > 1f &&
+                    Vector3.Distance(mousePosition, m_mouseDownPosition) > 1.2f &&
                     Vector3.Angle(mousePosition - m_mouseDownPosition, new Vector3(0, 1, 0)) < 10f)
                 {
                     Right_Up();
@@ -245,10 +248,15 @@ namespace Dao.SceneSystem
             {
                 FindUtility.Find("Environments/Bedroom/Scene/Background/InteractiveItems").SetActive(false);
             }
+
+            m_moveTask.Update(deltaTime);
         }
 
         private void Init()
         {
+            GoTo();
+            Background();
+
             // 点击大箱子
             Box();
             // 点击抽屉
@@ -268,9 +276,38 @@ namespace Dao.SceneSystem
             Window();
         }
 
+        private void GoTo()
+        {
+            var player = FindUtility.Find("Player");
+            var kitchen = FindUtility.Find("Environments/Bedroom/Scene/Background/Responders/厨房");
+            kitchen.AddComponent<Responder>().onMouseDown = async () =>
+            {
+                m_moveTask.Start(kitchen.transform.position.x);
+                m_moveTask.OnComplete = async () =>
+                {
+                    await GameUtility.Transition(() =>
+                    {
+                        SceneManager.Instance.LoadScene("Kitchen");
+                        player.transform.position = new Vector3(71.76f, -1.91f, 0);
+                    });
+                };
+            };
+        }
+
+        private void Background()
+        {
+            FindUtility.Find("Environments/Bedroom/Scene/Background/Responders/背景").AddComponent<Responder>().onMouseDown = () =>
+            {
+                float x = Camera.main.ScreenToWorldPoint(Input.mousePosition).x;
+                m_moveTask.Start(x);
+                m_moveTask.OnComplete = null;
+            };
+        }
+
         private void Box()
         {
             var background = FindUtility.Find("Environments/Bedroom/Scene/Background");
+            var responders = FindUtility.Find("Environments/Bedroom/Scene/Background/Responders");
             var player = FindUtility.Find("Player");
 
             var root = FindUtility.Find("Environments/Bedroom/Scene/Box");
@@ -278,13 +315,6 @@ namespace Dao.SceneSystem
 
             // 箱子打开后
             var boxOpened = FindUtility.Find("Environments/Bedroom/Scene/BoxOpened");
-            boxOpened.AddComponent<Responder>().onMouseDown = () =>
-            {
-                background.SetActive(true);
-                player.SetActive(true);
-                CameraController.Instance.Enable = true;
-                boxOpened.SetActive(false);
-            };
             // 拿碎片
             var piece = FindUtility.Find("Piece", boxOpened.transform);
             piece.AddComponent<Responder>().onMouseDown = () =>
@@ -301,45 +331,52 @@ namespace Dao.SceneSystem
                 // 添加道具
                 InventoryManager.Instance.AddItem(new Key());
             };
+            // 关闭
+            FindUtility.Find("Close", boxOpened.transform).AddComponent<Responder>().onMouseDown = () =>
+            {
+                boxOpened.SetActive(false);
+                responders.SetActive(true);
+            };
 
             // 显示界面
-            FindUtility.Find("Environments/Bedroom/Scene/Background/Responders/大箱子").AddComponent<Responder>().onMouseDown = () =>
+            var box = FindUtility.Find("Environments/Bedroom/Scene/Background/Responders/大箱子");
+            box.AddComponent<Responder>().onMouseDown = () =>
             {
-                Rect screenRect = CameraController.Instance.GetScreenRect();
-                background.SetActive(false);
-                player.SetActive(false);
-                CameraController.Instance.Enable = false;
-                if (m_isBoxOpened)
+                m_moveTask.Start(GameUtility.GetPlayerPos(box));
+                m_moveTask.OnComplete = () =>
                 {
-                    boxOpened.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
-                    boxOpened.SetActive(true);
-                }
-                else
-                {
-                    m_mouseDown = false;
-                    root.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
-                    root.SetActive(true);
-                    // 识别鼠标手势
-                    var upper = FindUtility.Find("Upper", root.transform);
-                    var left = FindUtility.Find("Left", root.transform);
-                    var right = FindUtility.Find("Right", root.transform);
+                    Rect screenRect = CameraController.Instance.GetScreenRect();
+                    responders.SetActive(false);
+                    if (m_isBoxOpened)
+                    {
+                        boxOpened.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
+                        boxOpened.SetActive(true);
+                    }
+                    else
+                    {
+                        m_mouseDown = false;
+                        root.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
+                        root.SetActive(true);
+                        // 识别鼠标手势
+                        var upper = FindUtility.Find("Upper", root.transform);
+                        var left = FindUtility.Find("Left", root.transform);
+                        var right = FindUtility.Find("Right", root.transform);
 
-                    m_upperBounds = upper.GetComponent<BoxCollider2D>().bounds;
-                    m_leftBounds = left.GetComponent<BoxCollider2D>().bounds;
-                    m_rightBounds = right.GetComponent<BoxCollider2D>().bounds;
-                }
+                        m_upperBounds = upper.GetComponent<BoxCollider2D>().bounds;
+                        m_leftBounds = left.GetComponent<BoxCollider2D>().bounds;
+                        m_rightBounds = right.GetComponent<BoxCollider2D>().bounds;
+                    }
+                };
             };
 
             // 关闭界面
-            root.AddComponent<Responder>().onMouseDown = () =>
+            FindUtility.Find("Close", root.transform).AddComponent<Responder>().onMouseDown = () =>
             {
-                background.SetActive(true);
-                player.SetActive(true);
-                CameraController.Instance.Enable = true;
+                responders.SetActive(true);
                 root.SetActive(false);
             };
         }
-        private void BoxCheck()
+        private async void BoxCheck()
         {
             var grid1 = FindUtility.Find("Environments/Bedroom/Scene/Box/Grid1").GetComponent<SpriteRenderer>();
             var grid2 = FindUtility.Find("Environments/Bedroom/Scene/Box/Grid2").GetComponent<SpriteRenderer>();
@@ -357,13 +394,15 @@ namespace Dao.SceneSystem
                 grid6.sprite == WordManager.Instance.GetWord("Mather").image &&
                 grid7.sprite == WordManager.Instance.GetWord("Sugar").image)
             {
-                m_isBoxOpened = true;
-                FindUtility.Find("Environments/Bedroom/Scene/Box").SetActive(false);
-                Rect screenRect = CameraController.Instance.GetScreenRect();
-                var boxOpened = FindUtility.Find("Environments/Bedroom/Scene/BoxOpened");
-                boxOpened.SetActive(true);
-                boxOpened.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
-                boxOpened.SetActive(true);
+                await GameUtility.Transition(() =>
+                {
+                    m_isBoxOpened = true;
+                    FindUtility.Find("Environments/Bedroom/Scene/Box").SetActive(false);
+                    Rect screenRect = CameraController.Instance.GetScreenRect();
+                    var boxOpened = FindUtility.Find("Environments/Bedroom/Scene/BoxOpened");
+                    boxOpened.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
+                    boxOpened.SetActive(true);
+                });
             }
         }
         private void Upper_Right()
@@ -384,8 +423,6 @@ namespace Dao.SceneSystem
             grid4.sprite = sprite3;
 
             BoxCheck();
-
-            Debug.Log(111);
         }
         private void Upper_Left()
         {
@@ -477,39 +514,39 @@ namespace Dao.SceneSystem
             var image = FindUtility.Find("Environments/Bedroom/Scene/Background/Base/抽屉").GetComponent<SpriteRenderer>();
 
             // 显示界面
-            FindUtility.Find("Environments/Bedroom/Scene/Background/Responders/抽屉").AddComponent<Responder>().onMouseDown = async () =>
+            var drawer = FindUtility.Find("Environments/Bedroom/Scene/Background/Responders/抽屉");
+            drawer.AddComponent<Responder>().onMouseDown = () =>
             {
-                if (m_isDrawerLocked)
+                m_moveTask.Start(GameUtility.GetPlayerPos(drawer));
+                m_moveTask.OnComplete = async () =>
                 {
-                    responders.SetActive(false);
-                    CameraController.Instance.Enable = false;
-                    var order = image.sortingOrder;
-                    image.sortingOrder = 31;
-                    var dialog = DialogUtility.GetDialog("Bedroom-Drawer");
-                    UIDialogManager.Instance.StartDialog(dialog);
-                    while (UIDialogManager.Instance.Enable)
-                        await Task.Yield();
-                    image.sortingOrder = order;
-                    responders.SetActive(true);
-                    CameraController.Instance.Enable = true;
-                }
-                else
-                {
-                    Rect screenRect = CameraController.Instance.GetScreenRect();
-                    root.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
-                    background.SetActive(false);
-                    player.SetActive(false);
-                    CameraController.Instance.Enable = false;
-                    root.SetActive(true);
-                }
+                    if (m_isDrawerLocked)
+                    {
+                        responders.SetActive(false);
+                        var order = image.sortingOrder;
+                        image.sortingOrder = 31;
+                        var dialog = DialogUtility.GetDialog("Bedroom-Drawer");
+                        CiphertextDialog.SetPosition(GameUtility.GetDialogPos(drawer));
+                        UIDialogManager.Instance.StartDialog(dialog);
+                        while (UIDialogManager.Instance.Enable)
+                            await Task.Yield();
+                        image.sortingOrder = order;
+                        responders.SetActive(true);
+                    }
+                    else
+                    {
+                        Rect screenRect = CameraController.Instance.GetScreenRect();
+                        root.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
+                        responders.SetActive(false);
+                        root.SetActive(true);
+                    }
+                };
             };
 
             // 关闭界面
-            root.AddComponent<Responder>().onMouseDown = () =>
+            FindUtility.Find("Close", root.transform).AddComponent<Responder>().onMouseDown = () =>
             {
-                background.SetActive(true);
-                player.SetActive(true);
-                CameraController.Instance.Enable = true;
+                responders.SetActive(true);
                 root.SetActive(false);
             };
 

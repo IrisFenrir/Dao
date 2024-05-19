@@ -13,6 +13,13 @@ namespace Dao.CameraSystem
 
         private Camera m_camera;
 
+        private Transform m_player;
+
+        public CameraController()
+        {
+            m_player = FindUtility.Find("Player").transform;
+        }
+
         public void BindCamera(Camera camera)
         {
             m_camera = camera;
@@ -43,14 +50,21 @@ namespace Dao.CameraSystem
         {
             if (!Enable) return;
 
-            Vector3 mousePos = Input.mousePosition;
-            if (mousePos.x < BoundWidth && m_camera.transform.position.x > MoveRange.x)
+            //Vector3 mousePos = Input.mousePosition;
+            //if (mousePos.x < BoundWidth && m_camera.transform.position.x > MoveRange.x)
+            //{
+            //    m_camera.transform.Translate(Vector3.left * MoveSpeed * deltaTime);
+            //}
+            //else if (mousePos.x > Screen.width - BoundWidth && m_camera.transform.position.x < MoveRange.y)
+            //{
+            //    m_camera.transform.Translate(Vector3.right * MoveSpeed * deltaTime);
+            //}
+
+            float target = Mathf.Clamp(m_player.position.x, MoveRange.x, MoveRange.y);
+            float current = m_camera.transform.position.x;
+            if ((target - current).Abs() > 0.01f)
             {
-                m_camera.transform.Translate(Vector3.left * MoveSpeed * deltaTime);
-            }
-            else if (mousePos.x > Screen.width - BoundWidth && m_camera.transform.position.x < MoveRange.y)
-            {
-                m_camera.transform.Translate(Vector3.right * MoveSpeed * deltaTime);
+                m_camera.transform.position = new Vector3(Mathf.Lerp(current, target, 0.01f), 0, -10);
             }
         }
     }

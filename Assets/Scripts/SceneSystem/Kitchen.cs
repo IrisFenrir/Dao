@@ -1,4 +1,5 @@
 ﻿using Dao.CameraSystem;
+using Dao.Common;
 using Dao.InventorySystem;
 using Dao.WordSystem;
 using System;
@@ -18,6 +19,8 @@ namespace Dao.SceneSystem
         private bool m_isCookFinished;
 
         private bool m_canShowInteractive;
+
+        private MoveTask m_moveTask = new();
 
         public Kitchen()
         {
@@ -41,15 +44,18 @@ namespace Dao.SceneSystem
 
         private void Init()
         {
+            Background();
+
             // 点击炉灶
             Stove();
             // 点击锅
             Pot();
-            // 点击食物
-            Food();
+            
             // 点击鸟
             Bird();
 
+            // 点击食物
+            SetDialog("做好的饭", "Kitchen-Food");
             // 调查罐子
             SetDialog("罐子", "Kitchen-Can");
             // 调查小碗
@@ -91,6 +97,8 @@ namespace Dao.SceneSystem
             Tea();
             // 调查墙上的纸条
             Paper();
+
+            GoTo();
         }
 
         public override void OnUpdate(float deltaTime)
@@ -122,6 +130,8 @@ namespace Dao.SceneSystem
             {
                 FindUtility.Find("Environments/Kitchen/Scene/Background/InteractiveItems").SetActive(false);
             }
+
+            m_moveTask.Update(deltaTime);
         }
 
         public void OpenFire()
@@ -142,6 +152,16 @@ namespace Dao.SceneSystem
             FindUtility.Find("Environments/Kitchen/Scene/Background/Responders/受伤的鸟").SetActive(true);
         }
 
+        private void Background()
+        {
+            FindUtility.Find("Environments/Kitchen/Scene/Background/Responders/背景").AddComponent<Responder>().onMouseDown = () =>
+            {
+                float x = Camera.main.ScreenToWorldPoint(Input.mousePosition).x;
+                m_moveTask.Start(x);
+                m_moveTask.OnComplete = null;
+            };
+        }
+
         private void Stove()
         {
             var stove = FindUtility.Find("炉灶", m_root.transform);
@@ -152,144 +172,158 @@ namespace Dao.SceneSystem
 
             stove.AddComponent<Responder>().onMouseDown = async () =>
             {
-                if (!firstClickClosed && !m_isFireOpened)
+                m_moveTask.Start(GameUtility.GetPlayerPos(stove));
+                m_moveTask.OnComplete = async () =>
                 {
-                    // 关闭响应
-                    responders.SetActive(false);
-                    m_canShowInteractive = false;
-                    CameraController.Instance.Enable = false;
-                    // 设置对话
-                    var dialog = DialogUtility.GetDialog("Kitchen-Stove-Closed");
-                    var select = dialog.Next[0].Next[0].Next[0].Next[0] as SelectDialog;
-                    // 选择是
-                    select.BindSelectAction(0, () =>
+                    if (!firstClickClosed && !m_isFireOpened)
                     {
-                        firstClickClosed = true;
-                        OpenFire();
-                    });
-                    // 开启对话
-                    UIDialogManager.Instance.StartDialog(dialog);
-                    while (UIDialogManager.Instance.Enable)
-                        await Task.Yield();
-                    // 开启响应
-                    responders.SetActive(true);
-                    m_canShowInteractive = true;
-                    CameraController.Instance.Enable = true;
-                }
-                else if (!firstClickOpened && m_isFireOpened)
-                {
-                    firstClickOpened = true;
-                    // 关闭响应
-                    responders.SetActive(false);
-                    m_canShowInteractive = false;
-                    CameraController.Instance.Enable = false;
-                    // 开启对话
-                    var dialog = DialogUtility.GetDialog("Kitchen-Fire-First");
-                    var select = DialogUtility.SearchSelectDialog(dialog);
-                    select.DisableOption(1);
-                    UIDialogManager.Instance.StartDialog(dialog);
-                    while (UIDialogManager.Instance.Enable)
-                        await Task.Yield();
-                    // 妈妈向左走离开
-                    var player = FindUtility.Find("Player");
-                    var mather = FindUtility.Find("MatherModel");
-                    mather.transform.position = new Vector3(player.transform.position.x, mather.transform.position.y, mather.transform.position.z);
-                    mather.SetActive(true);
-                    var matherAnim = mather.transform.Find("Model").GetComponent<Animator>();
-                    matherAnim.Play("Mather_WalkRight");
-                    mather.transform.localScale = new Vector3(-1, 1, 1);
-                    float walkSpeed = 5f;
-                    while (mather.transform.position.x > 46)
-                    {
-                        mather.transform.Translate(Vector3.left * walkSpeed * Time.deltaTime);
-                        await Task.Yield();
-                    }
-                    // 客厅开启医疗箱
-                    SceneManager.Instance.GetScene<LivingRoom>("LivingRoom").OpenMedicalCase();
-                    // 主角移动到灶台前
-                    var playerAnim = player.transform.Find("Model").GetComponent<Animator>();
-                    if (player.transform.position.x > 61.2f)
-                    {
-                        playerAnim.Play("Player_WalkRight");
-                        player.transform.localScale = new Vector3(-1, 1, 1);
-                        while (player.transform.position.x > 61.2f)
+                        // 关闭响应
+                        responders.SetActive(false);
+                        m_canShowInteractive = false;
+                        CameraController.Instance.Enable = false;
+                        // 设置对话
+                        var dialog = DialogUtility.GetDialog("Kitchen-Stove-Closed");
+                        var select = dialog.Next[0].Next[0].Next[0].Next[0] as SelectDialog;
+                        // 选择是
+                        select.BindSelectAction(0, () =>
                         {
-                            player.transform.Translate(Vector3.left * walkSpeed * Time.deltaTime);
+                            firstClickClosed = true;
+                            OpenFire();
+                        });
+                        select.BindSelectAction(1, () =>
+                        {
+                            UIDialogManager.Instance.Close();
+                        });
+                        // 开启对话
+                        CiphertextDialog.SetPosition(GameUtility.GetDialogPos(stove));
+                        UIDialogManager.Instance.StartDialog(dialog);
+                        while (UIDialogManager.Instance.Enable)
+                            await Task.Yield();
+                        CiphertextDialog.Reset();
+                        // 开启响应
+                        responders.SetActive(true);
+                        m_canShowInteractive = true;
+                        CameraController.Instance.Enable = true;
+                    }
+                    else if (!firstClickOpened && m_isFireOpened)
+                    {
+                        firstClickOpened = true;
+                        // 关闭响应
+                        responders.SetActive(false);
+                        m_canShowInteractive = false;
+                        CameraController.Instance.Enable = false;
+                        // 开启对话
+                        var dialog = DialogUtility.GetDialog("Kitchen-Fire-First");
+                        var select = DialogUtility.SearchSelectDialog(dialog);
+                        select.DisableOption(1);
+                        CiphertextDialog.SetPosition(GameUtility.GetDialogPos(stove));
+                        UIDialogManager.Instance.StartDialog(dialog);
+                        while (UIDialogManager.Instance.Enable)
+                            await Task.Yield();
+                        CiphertextDialog.Reset();
+                        // 妈妈向左走离开
+                        var player = FindUtility.Find("Player");
+                        var mather = FindUtility.Find("MatherModel");
+                        mather.transform.position = new Vector3(player.transform.position.x, mather.transform.position.y, mather.transform.position.z);
+                        mather.SetActive(true);
+                        var matherAnim = mather.transform.Find("Model").GetComponent<Animator>();
+                        matherAnim.Play("Mather_WalkRight");
+                        mather.transform.localScale = new Vector3(-1, 1, 1);
+                        float walkSpeed = 5f;
+                        while (mather.transform.position.x > 46)
+                        {
+                            mather.transform.Translate(Vector3.left * walkSpeed * Time.deltaTime);
                             await Task.Yield();
                         }
-                    }
-                    else
-                    {
-                        playerAnim.Play("Player_WalkRight");
-                        while (player.transform.position.x < 61.2f)
+                        // 客厅开启医疗箱
+                        SceneManager.Instance.GetScene<LivingRoom>("LivingRoom").OpenMedicalCase();
+                        // 主角移动到灶台前
+                        var playerAnim = player.transform.Find("Model").GetComponent<Animator>();
+                        if (player.transform.position.x > 61.2f)
                         {
-                            player.transform.Translate(Vector3.right * walkSpeed * Time.deltaTime);
+                            playerAnim.Play("Player_WalkRight");
+                            player.transform.localScale = new Vector3(-1, 1, 1);
+                            while (player.transform.position.x > 61.2f)
+                            {
+                                player.transform.Translate(Vector3.left * walkSpeed * Time.deltaTime);
+                                await Task.Yield();
+                            }
+                        }
+                        else
+                        {
+                            playerAnim.Play("Player_WalkRight");
+                            while (player.transform.position.x < 61.2f)
+                            {
+                                player.transform.Translate(Vector3.right * walkSpeed * Time.deltaTime);
+                                await Task.Yield();
+                            }
+                        }
+                        // 等待
+                        playerAnim.Play("Player_Idle");
+                        await Task.Delay(1000);
+                        // 妈妈回来
+                        matherAnim.Play("Mather_WalkRight");
+                        mather.transform.localScale = new Vector3(1, 1, 1);
+                        while (mather.transform.position.x < 59.2f)
+                        {
+                            mather.transform.Translate(Vector3.right * walkSpeed * Time.deltaTime);
                             await Task.Yield();
                         }
+                        matherAnim.Play("Mather_Idle");
+                        // 治疗过程
+                        var healDialog = DialogUtility.GetDialog("Kitchen-Heal");
+                        UIDialogManager.Instance.StartDialog(healDialog);
+                        while (UIDialogManager.Instance.Enable)
+                            await Task.Yield();
+                        // 黑屏出现
+                        var black = FindUtility.Find("Canvas/Black");
+                        black.SetActive(true);
+                        var blackImage = black.GetComponent<Image>();
+                        blackImage.color = new Color(0, 0, 0, 0);
+                        float a = 0;
+                        while (a < 1)
+                        {
+                            a += 2f * Time.deltaTime;
+                            a = Mathf.Clamp01(a);
+                            blackImage.color = new Color(0, 0, 0, a);
+                            await Task.Yield();
+                        }
+                        // 妈妈消失
+                        mather.SetActive(false);
+                        // 黑屏消失
+                        a = 1;
+                        while (a > 0)
+                        {
+                            a -= 2f * Time.deltaTime;
+                            a = Mathf.Clamp01(a);
+                            blackImage.color = new Color(0, 0, 0, a);
+                            await Task.Yield();
+                        }
+                        black.SetActive(false);
+                        // 恢复游戏
+                        responders.SetActive(true);
+                        m_canShowInteractive = true;
+                        CameraController.Instance.Enable = true;
                     }
-                    // 等待
-                    playerAnim.Play("Player_Idle");
-                    await Task.Delay(1000);
-                    // 妈妈回来
-                    matherAnim.Play("Mather_WalkRight");
-                    mather.transform.localScale = new Vector3(1, 1, 1);
-                    while (mather.transform.position.x < 59.2f)
+                    else if (m_isFireOpened)
                     {
-                        mather.transform.Translate(Vector3.right * walkSpeed * Time.deltaTime);
-                        await Task.Yield();
+                        // 关闭响应
+                        responders.SetActive(false);
+                        m_canShowInteractive = false;
+                        CameraController.Instance.Enable = false;
+                        // 开启对话
+                        var dialog = DialogUtility.GetDialog("Kitchen-Fire-NotFirst");
+                        CiphertextDialog.SetPosition(GameUtility.GetDialogPos(stove));
+                        UIDialogManager.Instance.StartDialog(dialog);
+                        while (UIDialogManager.Instance.Enable)
+                            await Task.Yield();
+                        CiphertextDialog.Reset();
+                        // 开启响应
+                        responders.SetActive(true);
+                        m_canShowInteractive = true;
+                        CameraController.Instance.Enable = true;
                     }
-                    matherAnim.Play("Mather_Idle");
-                    // 治疗过程
-                    var healDialog = DialogUtility.GetDialog("Kitchen-Heal");
-                    UIDialogManager.Instance.StartDialog(healDialog);
-                    while (UIDialogManager.Instance.Enable)
-                        await Task.Yield();
-                    // 黑屏出现
-                    var black = FindUtility.Find("Canvas/Black");
-                    black.SetActive(true);
-                    var blackImage = black.GetComponent<Image>();
-                    blackImage.color = new Color(0, 0, 0, 0);
-                    float a = 0;
-                    while (a < 1)
-                    {
-                        a += 2f * Time.deltaTime;
-                        a = Mathf.Clamp01(a);
-                        blackImage.color = new Color(0, 0, 0, a);
-                        await Task.Yield();
-                    }
-                    // 妈妈消失
-                    mather.SetActive(false);
-                    // 黑屏消失
-                    a = 1;
-                    while (a > 0)
-                    {
-                        a -= 2f * Time.deltaTime;
-                        a = Mathf.Clamp01(a);
-                        blackImage.color = new Color(0, 0, 0, a);
-                        await Task.Yield();
-                    }
-                    black.SetActive(false);
-                    // 恢复游戏
-                    responders.SetActive(true);
-                    m_canShowInteractive = true;
-                    CameraController.Instance.Enable = true;
-                }
-                else if (m_isFireOpened)
-                {
-                    // 关闭响应
-                    responders.SetActive(false);
-                    m_canShowInteractive = false;
-                    CameraController.Instance.Enable = false;
-                    // 开启对话
-                    var dialog = DialogUtility.GetDialog("Kitchen-Fire-NotFirst");
-                    UIDialogManager.Instance.StartDialog(dialog);
-                    while (UIDialogManager.Instance.Enable)
-                        await Task.Yield();
-                    // 开启响应
-                    responders.SetActive(true);
-                    m_canShowInteractive = true;
-                    CameraController.Instance.Enable = true;
-                }
+                };
             };
 
             stoveSwitch.AddComponent<Responder>().onMouseDown = async () =>
@@ -360,6 +394,18 @@ namespace Dao.SceneSystem
             var green2Pos = FindUtility.Find("Green2Pos", root.transform);
             var blue2Pos = FindUtility.Find("Blue2Pos", root.transform);
 
+            var saltImage = FindUtility.Find("SaltImage", root.transform);
+            var sugarImage = FindUtility.Find("SugarImage", root.transform);
+            var waterImage = FindUtility.Find("WaterImage", root.transform);
+            var red1Image = FindUtility.Find("Red1Image", root.transform);
+            var gree1Image = FindUtility.Find("Green1Image", root.transform);
+            var blue1Image = FindUtility.Find("Blue1Image", root.transform);
+            var red2Image = FindUtility.Find("Red2Image", root.transform);
+            var green2Image = FindUtility.Find("Green2Image", root.transform);
+            var blue2Image = FindUtility.Find("Blue2Image", root.transform);
+
+            var potSprite = FindUtility.Find("Environments/Kitchen/Scene/Background/Base/锅").GetComponent<SpriteRenderer>();
+
             Dictionary<GameObject, Vector3> itemPos = new()
             {
                 { salt, salt.transform.localPosition },
@@ -378,22 +424,11 @@ namespace Dao.SceneSystem
              * 开火 0 关火 1
              * 加盐 2 加糖 3 加水 4
              * 大红 5 大绿 6 大蓝 7
-             * 小红 8 小绿 9 小蓝 10
-             * 开 火 源头
-             * 大 红色 食物
-             * 大 蓝色 食物
-             * 小 绿色 食物
-             * 前 水
-             * 前 盐
-             * 大 绿色 食物
-             * 小 蓝色 食物
-             * 前 水
-             * 关 火 源头
-             * 前 糖
-             * 小 红色 食物 
+             * 小红 8 小绿 9 小蓝 10 
              */
-            int[] order = new int[] { 0, 5, 7, 9, 4, 2, 6, 10, 4, 1, 3, 8 };
+            int[] order = new int[] { 0, 5, 4, 6, 2, 10, 1 };
             int currentStep = 0;
+            List<int> realOrder = new();
             GameObject currentItem = null;
 
             // 烹饪失败
@@ -405,13 +440,19 @@ namespace Dao.SceneSystem
                 // 复位
                 foreach (var item in itemPos)
                 {
+                    item.Key.SetActive(true);
                     item.Key.transform.localPosition = item.Value;
                     item.Key.GetComponent<BoxCollider2D>().enabled = true;
                 }
-                var position = FindUtility.Find("Position").transform;
+                var position = FindUtility.Find("Position", root.transform).transform;
                 for (int i = 0; i < position.childCount; i++)
                 {
                     position.GetChild(i).gameObject.SetActive(false);
+                }
+                var image = FindUtility.Find("Image", root.transform).transform;
+                for (int i = 0; i < image.childCount; i++)
+                {
+                    image.GetChild(i).gameObject.SetActive(false);
                 }
 
                 currentStep = 0;
@@ -420,13 +461,16 @@ namespace Dao.SceneSystem
                 player.SetActive(true);
                 responders.SetActive(false);
                 m_canShowInteractive = false;
+                int order = potSprite.sortingOrder;
+                potSprite.sortingOrder = 31;
                 var dialog = DialogUtility.GetDialog("Kitchen-Cook-Fail");
                 UIDialogManager.Instance.StartDialog(dialog);
                 while (UIDialogManager.Instance.Enable)
                     await Task.Yield();
+                CiphertextDialog.Reset();
+                potSprite.sortingOrder = order;
                 responders.SetActive(true);
                 m_canShowInteractive = true;
-                CameraController.Instance.Enable = true;
             };
 
             // 烹饪成功
@@ -454,10 +498,14 @@ namespace Dao.SceneSystem
                 player.SetActive(true);
                 responders.SetActive(false);
                 m_canShowInteractive = false;
+                int order = potSprite.sortingOrder;
+                potSprite.sortingOrder = 31;
                 var dialog = DialogUtility.GetDialog("Kitchen-Cook-Success");
                 UIDialogManager.Instance.StartDialog(dialog);
                 while (UIDialogManager.Instance.Enable)
                     await Task.Yield();
+                CiphertextDialog.Reset();
+                potSprite.sortingOrder = order;
 
                 // 食物出现
                 FindUtility.Find("做好的饭", m_root.transform).SetActive(true);
@@ -486,7 +534,33 @@ namespace Dao.SceneSystem
                 m_canShowInteractive = true;
             };
 
+            // 检查结果
+            Action<int, Action, Action> check = (index, onSuccess, onFail) =>
+            {
+                realOrder.Add(index);
+                if (realOrder.Count == order.Length)
+                {
+                    bool result = true;
+                    for (int i = 0; i < order.Length; i++)
+                    {
+                        result = result && (realOrder[i] == order[i]);
+                    }
+                    realOrder.Clear();
+                    if (result)
+                    {
+                        onSuccess?.Invoke();
+                        cookSuccess();
+                    }
+                    else
+                    {
+                        onFail?.Invoke();
+                        cookFail();
+                    }  
+                }
+            };
+
             // 开火关火
+            var fireSwitchSound = fireSwitch.GetComponent<AudioSource>();
             fireSwitch.AddComponent<Responder>().onMouseDown = () =>
             {
                 if (isFireOpened)
@@ -495,14 +569,7 @@ namespace Dao.SceneSystem
                     fire.SetActive(false);
                     isFireOpened = false;
                     // 检查步骤
-                    if (order[currentStep] == 1)
-                    {
-                        currentStep++;
-                    }
-                    else
-                    {
-                        cookFail();
-                    }
+                    check(1, null, null);
                 }
                 else
                 {
@@ -510,14 +577,7 @@ namespace Dao.SceneSystem
                     fire.SetActive(true);
                     isFireOpened = true;
                     // 检查步骤
-                    if (order[currentStep] == 0)
-                    {
-                        currentStep++;
-                    }
-                    else
-                    {
-                        cookFail();
-                    }
+                    check(0, null, null);
                 }
             };
 
@@ -822,56 +882,87 @@ namespace Dao.SceneSystem
                     currentItem.transform.SetParent(root.transform);
                     currentItem.transform.localPosition = itemPos[currentItem];
                     currentItem.GetComponent<BoxCollider2D>().enabled = true;
-                    canClose = true;
+                    // 效果
+                    if (currentItem == salt)
+                    {
+                        saltImage.SetActive(true);
+                    }
+                    else if (currentItem == sugar)
+                    {
+                        sugarImage.SetActive(true);
+                    }
+                    else if (currentItem == water)
+                    {
+                        waterImage.SetActive(true);
+                    }
                     // 检查步骤
-                    if ((currentItem == salt && order[currentStep] == 2) || 
-                        (currentItem == sugar && order[currentStep] == 3) ||
-                        (currentItem == water && order[currentStep] == 4))
-                    {
-                        currentStep++;
-                        currentItem = null;
-                        if (currentStep == 12)
-                            cookSuccess();
-                    }
-                    else
-                    {
-                        currentItem = null;
-                        cookFail();
-                    }
+                    int cur = 0;
+                    if (currentItem == salt) cur = 2;
+                    else if (currentItem == sugar) cur = 3;
+                    else if (currentItem == water) cur = 4;
+                    currentItem = null;
+                    check(cur, null, null);
                 }
                 // 其他食物
                 else
                 {
-                    // 检查步骤
-                    if ((currentItem == red1 && order[currentStep] == 5) ||
-                        (currentItem == green1 && order[currentStep] == 6) ||
-                        (currentItem == blue1 && order[currentStep] == 7) ||
-                        (currentItem == red2 && order[currentStep] == 8) ||
-                        (currentItem == green2 && order[currentStep] == 9) ||
-                        (currentItem == blue2 && order[currentStep] == 10))
+                    // 放下食物
+                    currentItem.transform.SetParent(root.transform);
+                    if (currentItem == red1) red1Pos.SetActive(false);
+                    else if (currentItem == green1) green1Pos.SetActive(false);
+                    else if (currentItem == blue1) blue1Pos.SetActive(false);
+                    else if (currentItem == red2) red2Pos.SetActive(false);
+                    else if (currentItem == green2) green2Pos.SetActive(false);
+                    else if (currentItem == blue2) blue2Pos.SetActive(false);
+                    
+                    // 显示效果
+                    currentItem.SetActive(false);
+                    if(currentItem == red1)
                     {
-                        currentStep++;
-                        // 放入锅中
-                        currentItem.transform.SetParent(root.transform);
-                        if (currentItem == red1) red1Pos.SetActive(false);
-                        else if (currentItem == green1) green1Pos.SetActive(false);
-                        else if (currentItem == blue1) blue1Pos.SetActive(false);
-                        else if (currentItem == red2) red2Pos.SetActive(false);
-                        else if (currentItem == green2) green2Pos.SetActive(false);
-                        else if (currentItem == blue2) blue2Pos.SetActive(false);
-                        currentItem = null;
-                        if (currentStep == 12)
-                            cookSuccess();
+                        red1Image.SetActive(true);
                     }
-                    else
+                    else if (currentItem == green1)
+                    {
+                        gree1Image.SetActive(true);
+                    }
+                    else if (currentItem == blue1)
+                    {
+                        blue1Image.SetActive(true);
+                    }
+                    else if(currentItem == red2)
+                    {
+                        red2Image.SetActive(true);
+                    }
+                    else if (currentItem == green2)
+                    {
+                        green2Image.SetActive(true);
+                    }
+                    else if (currentItem == blue2)
+                    {
+                        blue2Image.SetActive(true);
+                    }
+                    
+                    // 检查步骤
+                    int cur = 0;
+                    if (currentItem == red1) cur = 5;
+                    else if (currentItem == green1) cur = 6;
+                    else if (currentItem == blue1) cur = 7;
+                    else if (currentItem == red2) cur = 8;
+                    else if (currentItem == green2) cur = 9;
+                    else if (currentItem == blue2) cur = 10;
+                    currentItem = null;
+                    check(cur, () =>
+                    {
+                        cookSuccess();
+                    },
+                    () =>
                     {
                         currentItem.transform.SetParent(root.transform);
                         currentItem.transform.localPosition = itemPos[currentItem];
                         currentItem.GetComponent<BoxCollider2D>().enabled = true;
-                        currentItem = null;
-                        canClose = true;
+                        //canClose = true;
                         cookFail();
-                    }
+                    });
                 }
             };
 
@@ -881,35 +972,49 @@ namespace Dao.SceneSystem
             {
                 while (UIDialogManager.Instance.Enable)
                     await Task.Yield();
+                CiphertextDialog.Reset();
                 Rect screenRect = CameraController.Instance.GetScreenRect();
                 root.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
                 background.SetActive(false);
                 player.SetActive(false);
-                CameraController.Instance.Enable = false;
                 root.SetActive(true);
                 canClose = true;
             };
+            select.BindSelectAction(1, () =>
+            {
+                UIDialogManager.Instance.Close();
+            });
+            
 
             // 显示界面
-            FindUtility.Find("Environments/Kitchen/Scene/Background/Responders/锅").AddComponent<Responder>().onMouseDown = async () =>
+            var potResponder = FindUtility.Find("Environments/Kitchen/Scene/Background/Responders/锅");
+            
+            potResponder.AddComponent<Responder>().onMouseDown = () =>
             {
-                responders.SetActive(false);
-                m_canShowInteractive = false;
-                CameraController.Instance.Enable = false;
-                UIDialogManager.Instance.StartDialog(dialog);
-                while (UIDialogManager.Instance.Enable)
-                    await Task.Yield();
-                responders.SetActive(true);
-                m_canShowInteractive = true;
+                m_moveTask.Start(GameUtility.GetPlayerPos(potResponder));
+                m_moveTask.OnComplete = async () =>
+                {
+                    responders.SetActive(false);
+                    m_canShowInteractive = false;
+                    int order = potSprite.sortingOrder;
+                    potSprite.sortingOrder = 31;
+                    CiphertextDialog.SetPosition(GameUtility.GetDialogPos(potResponder));
+                    UIDialogManager.Instance.StartDialog(dialog);
+                    while (UIDialogManager.Instance.Enable)
+                        await Task.Yield();
+                    CiphertextDialog.Reset();
+                    potSprite.sortingOrder = order;
+                    responders.SetActive(true);
+                    m_canShowInteractive = true;
+                };
             };
 
             // 关闭界面
-            root.AddComponent<Responder>().onMouseDown = () =>
+            FindUtility.Find("Close", root.transform).AddComponent<Responder>().onMouseDown = () =>
             {
                 if (!canClose) return;
                 background.SetActive(true);
                 player.SetActive(true);
-                CameraController.Instance.Enable = true;
                 root.SetActive(false);
                 responders.SetActive(true);
                 m_canShowInteractive = true;
@@ -946,27 +1051,26 @@ namespace Dao.SceneSystem
             bool canClose = true;
 
             // 显示界面
-            FindUtility.Find("Environments/Kitchen/Scene/Background/Responders/受伤的鸟").AddComponent<Responder>().onMouseDown = () =>
+            var bird = FindUtility.Find("Environments/Kitchen/Scene/Background/Responders/受伤的鸟");
+            bird.AddComponent<Responder>().onMouseDown = () =>
             {
-                Rect screenRect = CameraController.Instance.GetScreenRect();
-                root.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
-                background.SetActive(false);
-                responders.SetActive(false);
-                m_canShowInteractive = false;
-                player.SetActive(false);
-                CameraController.Instance.Enable = false;
-                root.SetActive(true);
+                m_moveTask.Start(GameUtility.GetPlayerPos(bird));
+                m_moveTask.OnComplete = () =>
+                {
+                    Rect screenRect = CameraController.Instance.GetScreenRect();
+                    root.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
+                    responders.SetActive(false);
+                    m_canShowInteractive = false;
+                    root.SetActive(true);
+                };
             };
 
             // 关闭界面
-            root.AddComponent<Responder>().onMouseDown = () =>
+            FindUtility.Find("Close", root.transform).AddComponent<Responder>().onMouseDown = () =>
             {
                 if (!canClose) return;
-                background.SetActive(true);
                 responders.SetActive(true);
                 m_canShowInteractive = true;
-                player.SetActive(true);
-                CameraController.Instance.Enable = true;
                 root.SetActive(false);
             };
 
@@ -990,6 +1094,7 @@ namespace Dao.SceneSystem
                 birdResponders.SetActive(false);
                 CameraController.Instance.Enable = false;
                 var dialog = DialogUtility.GetDialog("Kitchen-Bird-Food");
+                CiphertextDialog.SetPosition(GameUtility.GetDialogPos(food));
                 UIDialogManager.Instance.StartDialog(dialog);
                 while (UIDialogManager.Instance.Enable)
                     await Task.Yield();
@@ -1005,6 +1110,7 @@ namespace Dao.SceneSystem
                 birdResponders.SetActive(false);
                 CameraController.Instance.Enable = false;
                 var dialog = DialogUtility.GetDialog("Kitchen-Bird-Body");
+                CiphertextDialog.SetPosition(GameUtility.GetDialogPos(body));
                 UIDialogManager.Instance.StartDialog(dialog);
                 while (UIDialogManager.Instance.Enable)
                     await Task.Yield();
@@ -1020,6 +1126,7 @@ namespace Dao.SceneSystem
                 birdResponders.SetActive(false);
                 CameraController.Instance.Enable = false;
                 var dialog = DialogUtility.GetDialog("Kitchen-Bird-Hurt");
+                CiphertextDialog.SetPosition(GameUtility.GetDialogPos(hurt));
                 UIDialogManager.Instance.StartDialog(dialog);
                 while (UIDialogManager.Instance.Enable)
                     await Task.Yield();
@@ -1034,50 +1141,57 @@ namespace Dao.SceneSystem
             var responders = FindUtility.Find("Environments/Kitchen/Scene/Background/Responders");
             var item = FindUtility.Find("Environments/Kitchen/Scene/Background/Responders/" + itemName);
             var image = FindUtility.Find("Environments/Kitchen/Scene/Background/Base/" + itemName).GetComponent<SpriteRenderer>();
-            item.AddComponent<Responder>().onMouseDown = async () =>
+            item.AddComponent<Responder>().onMouseDown = () =>
             {
-                responders.SetActive(false);
-                m_canShowInteractive = false;
-                CameraController.Instance.Enable = false;
-                var order = image.sortingOrder;
-                image.sortingOrder = 31;
-                var dialog = DialogUtility.GetDialog(dialogID);
-                UIDialogManager.Instance.StartDialog(dialog);
-                while (UIDialogManager.Instance.Enable)
-                    await Task.Yield();
-                image.sortingOrder = order;
-                responders.SetActive(true);
-                m_canShowInteractive = true;
-                CameraController.Instance.Enable = true;
+                m_moveTask.Start(GameUtility.GetPlayerPos(item));
+                m_moveTask.OnComplete = async () =>
+                {
+                    responders.SetActive(false);
+                    m_canShowInteractive = false;
+                    CameraController.Instance.Enable = false;
+                    var order = image.sortingOrder;
+                    image.sortingOrder = 31;
+                    var dialog = DialogUtility.GetDialog(dialogID);
+                    CiphertextDialog.SetPosition(GameUtility.GetDialogPos(item));
+                    UIDialogManager.Instance.StartDialog(dialog);
+                    while (UIDialogManager.Instance.Enable)
+                        await Task.Yield();
+                    image.sortingOrder = order;
+                    responders.SetActive(true);
+                    m_canShowInteractive = true;
+                    CameraController.Instance.Enable = true;
+                };
             };
         }
 
         private void BigCup()
         {
             var background = FindUtility.Find("Environments/Kitchen/Scene/Background");
+            var responders = FindUtility.Find("Environments/Kitchen/Scene/Background/Responders");
             var player = FindUtility.Find("Player");
             var root = FindUtility.Find("Environments/Kitchen/Scene/BigCup");
             var colliders = root.GetComponentsInChildren<Collider2D>().ToList();
 
             // 打开界面
-            FindUtility.Find("Environments/Kitchen/Scene/Background/Responders/大水杯").AddComponent<Responder>().onMouseDown = () =>
+            var bottle = FindUtility.Find("Environments/Kitchen/Scene/Background/Responders/大水杯");
+            bottle.AddComponent<Responder>().onMouseDown = () =>
             {
-                Rect screenRect = CameraController.Instance.GetScreenRect();
-                root.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
-                background.SetActive(false);
-                m_canShowInteractive = false;
-                player.SetActive(false);
-                CameraController.Instance.Enable = false;
-                root.SetActive(true);
+                m_moveTask.Start(GameUtility.GetPlayerPos(bottle));
+                m_moveTask.OnComplete = () =>
+                {
+                    Rect screenRect = CameraController.Instance.GetScreenRect();
+                    root.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
+                    m_canShowInteractive = false;
+                    responders.SetActive(false);
+                    root.SetActive(true);
+                };
             };
 
             // 关闭界面
-            root.AddComponent<Responder>().onMouseDown = () =>
+            FindUtility.Find("Close", root.transform).AddComponent<Responder>().onMouseDown = () =>
             {
-                background.SetActive(true);
                 m_canShowInteractive = true;
-                player.SetActive(true);
-                CameraController.Instance.Enable = true;
+                responders.SetActive(true);
                 root.SetActive(false);
             };
 
@@ -1087,6 +1201,7 @@ namespace Dao.SceneSystem
             {
                 colliders.ForEach(c => c.enabled = false);
                 var dialog = DialogUtility.GetDialog("Kitchen-BigCup-Body");
+                CiphertextDialog.SetPosition(GameUtility.GetDialogPos(body));
                 UIDialogManager.Instance.StartDialog(dialog, false);
                 while (UIDialogManager.Instance.Enable)
                     await Task.Yield();
@@ -1099,6 +1214,7 @@ namespace Dao.SceneSystem
             {
                 colliders.ForEach(c => c.enabled = false);
                 var dialog = DialogUtility.GetDialog("Kitchen-BigCup-Red");
+                CiphertextDialog.SetPosition(GameUtility.GetDialogPos(red));
                 UIDialogManager.Instance.StartDialog(dialog, false);
                 while (UIDialogManager.Instance.Enable)
                     await Task.Yield();
@@ -1111,6 +1227,7 @@ namespace Dao.SceneSystem
             {
                 colliders.ForEach(c => c.enabled = false);
                 var dialog = DialogUtility.GetDialog("Kitchen-BigCup-Green");
+                CiphertextDialog.SetPosition(GameUtility.GetDialogPos(green));
                 UIDialogManager.Instance.StartDialog(dialog, false);
                 while (UIDialogManager.Instance.Enable)
                     await Task.Yield();
@@ -1123,6 +1240,7 @@ namespace Dao.SceneSystem
             {
                 colliders.ForEach(c => c.enabled = false);
                 var dialog = DialogUtility.GetDialog("Kitchen-BigCup-Blue");
+                CiphertextDialog.SetPosition(GameUtility.GetDialogPos(blue));
                 UIDialogManager.Instance.StartDialog(dialog, false);
                 while (UIDialogManager.Instance.Enable)
                     await Task.Yield();
@@ -1145,38 +1263,41 @@ namespace Dao.SceneSystem
             var select = DialogUtility.SearchSelectDialog(dialog);
             select.BindSelectAction(0, async () =>
             {
+                UIDialogManager.Instance.Close();
                 player.SetActive(false);
                 playerSit.SetActive(true);
-                while (Input.GetAxis("Horizontal") == 0)
+                while (!Input.GetMouseButtonDown(0))
                     await Task.Yield();
                 player.SetActive(true);
                 playerSit.SetActive(false);
                 responders.SetActive(true);
                 m_canShowInteractive = true;
-                CameraController.Instance.Enable = true;
             });
             select.BindSelectAction(1, () =>
             {
+                UIDialogManager.Instance.Close();
                 responders.SetActive(true);
                 m_canShowInteractive = true;
-                CameraController.Instance.Enable = true;
             });
 
-            Action sit = async () =>
+            Action sit = () =>
             {
-                responders.SetActive(false);
-                m_canShowInteractive = false;
-                CameraController.Instance.Enable = false;
-                var order1 = chair1Image.sortingOrder;
-                var order2 = chair2Image.sortingOrder;
-                chair1Image.sortingOrder = 31;
-                chair2Image.sortingOrder = 31;
-                
-                UIDialogManager.Instance.StartDialog(dialog);
-                while (UIDialogManager.Instance.Enable)
-                    await Task.Yield();
-                chair1Image.sortingOrder = order1;
-                chair2Image.sortingOrder = order2;
+                m_moveTask.Start(GameUtility.GetPlayerPos(chair1));
+                m_moveTask.OnComplete = async () =>
+                {
+                    responders.SetActive(false);
+                    m_canShowInteractive = false;
+                    var order1 = chair1Image.sortingOrder;
+                    var order2 = chair2Image.sortingOrder;
+                    chair1Image.sortingOrder = 31;
+                    chair2Image.sortingOrder = 31;
+                    CiphertextDialog.SetPosition(GameUtility.GetDialogPos(chair1));
+                    UIDialogManager.Instance.StartDialog(dialog);
+                    while (UIDialogManager.Instance.Enable)
+                        await Task.Yield();
+                    chair1Image.sortingOrder = order1;
+                    chair2Image.sortingOrder = order2;
+                };
             };
 
             chair1.AddComponent<Responder>().onMouseDown = sit;
@@ -1200,6 +1321,43 @@ namespace Dao.SceneSystem
                 FindUtility.Find("Environments/Kitchen/Scene/Background/Base/纸条").SetActive(false);
                 // 添加道具
                 InventoryManager.Instance.AddItem(new Menu());
+            };
+        }
+
+        private void GoTo()
+        {
+            var livingRoom = FindUtility.Find("Environments/Kitchen/Scene/Background/Responders/客厅");
+            var bedRoom = FindUtility.Find("Environments/Kitchen/Scene/Background/Responders/卧室");
+            var player = FindUtility.Find("Player");
+
+            livingRoom.AddComponent<Responder>().onMouseDown = () =>
+            {
+                m_moveTask.Start(livingRoom.transform.position.x);
+                m_moveTask.OnComplete = async () =>
+                {
+                    await GameUtility.Transition(() =>
+                    {
+                        SceneManager.Instance.LoadScene("LivingRoom");
+                        player.transform.position = new Vector3(39.24f, -1.91f, 0);
+                        if (m_isCookFinished)
+                            ShowBird();
+                    });
+                };
+            };
+
+            bedRoom.AddComponent<Responder>().onMouseDown = () =>
+            {
+                m_moveTask.Start(bedRoom.transform.position.x);
+                m_moveTask.OnComplete = async () =>
+                {
+                    await GameUtility.Transition(() =>
+                    {
+                        SceneManager.Instance.LoadScene("Bedroom");
+                        player.transform.position = new Vector3(90.86f, -1.91f, 0);
+                        if (m_isCookFinished)
+                            ShowBird();
+                    });
+                };
             };
         }
     }

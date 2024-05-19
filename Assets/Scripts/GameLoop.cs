@@ -3,23 +3,19 @@ using Dao.InventorySystem;
 using Dao.SceneSystem;
 using Dao.WordSystem;
 using UnityEngine;
+using static Dao.Common.GameUtility;
 
 public class GameLoop : MonoBehaviour
 {
     public static GameLoop Instance { get; private set; }
 
-    public float cameraMoveSpeed = 60;
-
-    [Header("UI")]
-    public GameObject sentenceWordItem;
-    public GameObject dictionaryPage;
-    public GameObject dictionaryWordItem;
-    public GameObject wordContextPage;
-    public GameObject wordContextItem;
-    public GameObject uiTranslation;
+    [Header("Common")]
+    public float transitionLerpSpeed = 0.05f;
+    public TransitionDirection transitionDirection;
 
     [Header("EntryRoom")]
-    public Vector2 doorHandleAngleRange;
+    public float handFadeTime = 2f;
+    public float handDelayTime = 1.5f;
 
     [Header("LivingRoom")]
     public Sprite boxSwitchOn;
@@ -33,7 +29,7 @@ public class GameLoop : MonoBehaviour
     private void Start()
     {
         CameraController.Instance.BindCamera(Camera.main);
-        CameraController.Instance.MoveSpeed = cameraMoveSpeed;
+        //CameraController.Instance.MoveSpeed = cameraMoveSpeed;
 
         string dialogDataPath = Application.streamingAssetsPath + "/Data/DialogData.json";
 
@@ -61,6 +57,8 @@ public class GameLoop : MonoBehaviour
         {
             SceneManager.Instance.GetScene<LivingRoom>("LivingRoom").OpenMedicalCase();
         }
+
+        
     }
 }
 
