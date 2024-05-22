@@ -830,29 +830,40 @@ namespace Dao.SceneSystem
 
             var cases = FindUtility.Find("Case", open.transform);
             var image = cases.GetComponent<SpriteRenderer>();
-            FindUtility.Find("医疗箱", open.transform).AddComponent<Responder>().onMouseDown = async () =>
+            var caseItem = FindUtility.Find("医疗箱", open.transform);
+            caseItem.AddComponent<Responder>().onMouseDown = () =>
             {
-                responders.SetActive(false);
-                CameraController.Instance.Enable = false;
-                m_canShowInteractive = false;
-                var order = image.sortingOrder;
-                image.sortingOrder = 31;
-                var dialog = DialogUtility.GetDialog("LivingRoom-MedicalCase");
-                UIDialogManager.Instance.StartDialog(dialog);
-                while (UIDialogManager.Instance.Enable)
-                    await Task.Yield();
-                image.sortingOrder = order;
-                responders.SetActive(true);
-                CameraController.Instance.Enable = true;
-                m_canShowInteractive = true;
+                m_moveTask.Start(GameUtility.GetPlayerPos(caseItem));
+                m_moveTask.OnComplete = async () =>
+                {
+                    responders.SetActive(false);
+                    CameraController.Instance.Enable = false;
+                    m_canShowInteractive = false;
+                    var order = image.sortingOrder;
+                    image.sortingOrder = 31;
+                    var dialog = DialogUtility.GetDialog("LivingRoom-MedicalCase");
+                    CiphertextDialog.SetPosition(GameUtility.GetDialogPos(caseItem));
+                    UIDialogManager.Instance.StartDialog(dialog);
+                    while (UIDialogManager.Instance.Enable)
+                        await Task.Yield();
+                    image.sortingOrder = order;
+                    responders.SetActive(true);
+                    CameraController.Instance.Enable = true;
+                    m_canShowInteractive = true;
+                };
             };
 
             var paper = FindUtility.Find("Paper", open.transform);
-            FindUtility.Find("纸条", open.transform).AddComponent<Responder>().onMouseDown = () =>
+            var paperItem = FindUtility.Find("纸条", open.transform);
+            paperItem.AddComponent<Responder>().onMouseDown = () =>
             {
-                paper.SetActive(false);
-                // 纸条 放入道具栏
-                InventoryManager.Instance.AddItem(new LivingRoomPaper());
+                m_moveTask.Start(GameUtility.GetPlayerPos(paperItem));
+                m_moveTask.OnComplete = () =>
+                {
+                    paper.SetActive(false);
+                    // 纸条 放入道具栏
+                    InventoryManager.Instance.AddItem(new LivingRoomPaper());
+                };
             };
         }
 

@@ -50,6 +50,7 @@ namespace Dao.InventorySystem
             {
                 index = m_queue.Dequeue();
             }
+            Debug.Log(index);
             m_items[index] = item;
             var go = GameObject.Instantiate(item.gameObject).transform;
             go.SetParent(m_root.transform.GetChild(index));
@@ -73,6 +74,22 @@ namespace Dao.InventorySystem
         {
             Rect screenRect = CameraController.Instance.GetScreenRect();
             m_root.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
+        }
+
+        public void DisableAllItems()
+        {
+            for (int i = 0; i < 11; i++)
+            {
+                m_root.transform.GetChild(i).gameObject.GetComponent<Responder>().enable = false;
+            }
+        }
+
+        public void EnableAllItems()
+        {
+            for (int i = 0; i < 11; i++)
+            {
+                m_root.transform.GetChild(i).gameObject.GetComponent<Responder>().enable = true;
+            }
         }
     }
 }

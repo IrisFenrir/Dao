@@ -1,4 +1,8 @@
-﻿using System;
+﻿using Dao.CameraSystem;
+using Dao.InventorySystem;
+using Dao.SceneSystem;
+using Dao.WordSystem;
+using System;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
@@ -235,6 +239,43 @@ namespace Dao.Common
                 case TransitionDirection.BottomToTop:
                     await TransitionBottom2Top(action);
                     break;
+            }
+        }
+
+        public static void SetPositionToScreenCenter(GameObject gameObject)
+        {
+            Rect screenRect = CameraController.Instance.GetScreenRect();
+            gameObject.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
+        }
+
+        public static void ShowItem(string itemName, params string[] words)
+        {
+            var panel = FindUtility.Find($"Inventory/ItemUI/{itemName}");
+
+            // 禁用当前场景的交互
+            string currentScene = SceneManager.Instance.Current.name;
+            var responders = FindUtility.Find($"Environments/{currentScene}/Scene/Background/Responders");
+            responders.SetActive(false);
+            InventoryManager.Instance.DisableAllItems();
+
+            // 打开界面
+            GameUtility.SetPositionToScreenCenter(panel);
+            panel.SetActive(true);
+
+            // 关闭界面
+            FindUtility.Find("Close", panel.transform).AddComponent<Responder>().onMouseDown = () =>
+            {
+                panel.SetActive(false);
+                responders.SetActive(true);
+                InventoryManager.Instance.EnableAllItems();
+            };
+
+            // 设置密文交互
+            for (int i = 0; i < words.Length; i++)
+            {
+                string id = words[i];
+                UIDictionary.Instance.AddWord(id);
+                new UIWord(WordManager.Instance.GetWord(id), FindUtility.Find($"Inventory/ItemUI/{itemName}/Words/UIWord{i+1}"), FindUtility.Find("WorldCanvas/UIWord"));
             }
         }
     }

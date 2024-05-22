@@ -20,8 +20,8 @@ namespace Dao
 
         public void Start(float x)
         {
-            if (Mathf.Abs(x - m_player.transform.position.x) < 0.01f)
-                return;
+            //if (Mathf.Abs(x - m_player.transform.position.x) < 0.01f)
+            //    return;
             if (isRunning)
             {
                 OnInterrupt?.Invoke();

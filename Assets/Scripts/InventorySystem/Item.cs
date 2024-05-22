@@ -1,7 +1,7 @@
-﻿using Dao.SceneSystem;
+﻿using Dao.Common;
+using Dao.SceneSystem;
 using Dao.WordSystem;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Dao.InventorySystem
 {
@@ -20,6 +20,14 @@ namespace Dao.InventorySystem
             name = "Tea";
             gameObject = FindUtility.Find("Inventory/Tea");
         }
+
+        public override void Use(int index)
+        {
+            var teaUI = FindUtility.Find("Canvas/TeaUI");
+
+            teaUI.SetActive(true);
+            UIDictionary.Instance.Show(1);
+        }
     }
 
     public class LivingRoomPaper : Item
@@ -28,6 +36,35 @@ namespace Dao.InventorySystem
         {
             name = "LivingRoomPaper";
             gameObject = FindUtility.Find("Inventory/LivingRoomPaper");
+        }
+
+        public override void Use(int index)
+        {
+            GameUtility.ShowItem("LivingRoomPaper", 
+                "Bird", "Like", "Wind", "Wind", "Front", "Water",
+                "Plant", "Like", "Dirt", "Dirt", "Front", "Water",
+                "Father", "Mather", "Look", "Kid", "Kid", "Want", "Sugar",
+                "Father", "Mather", "Deny", "Look",
+                "Fear", "Front", "Want", "Back");
+        }
+    }
+
+    public class BedroomPaper : Item
+    {
+        public BedroomPaper()
+        {
+            name = "BedroomPaper";
+            gameObject = FindUtility.Find("Inventory/BedroomPaper");
+        }
+
+        public override void Use(int index)
+        {
+            GameUtility.ShowItem("BedroomPaper",
+                "Make", "Food",
+                "Father", "Put", "Knife",
+                "Mather", "Put", "Fire",
+                "Kid", "Put", "Container",
+                "I", "I", "Beautiful", "Source");
         }
     }
 
@@ -38,6 +75,21 @@ namespace Dao.InventorySystem
             name = "Piece1";
             gameObject = FindUtility.Find("Inventory/Piece1");
         }
+
+        public override void Use(int index)
+        {
+            var note = FindUtility.Find("Environments/Bedroom/Scene/Note");
+
+            if (note.activeInHierarchy)
+            {
+                SceneManager.Instance.GetScene<Bedroom>("Bedroom").MoveNotePiece1();
+                InventoryManager.Instance.Remove(index);
+            }
+            else
+            {
+                GameUtility.ShowItem("Piece1", "Mather", "Like", "I", "Mather", "Hurt");
+            }
+        }
     }
 
     public class Piece2 : Item
@@ -46,6 +98,18 @@ namespace Dao.InventorySystem
         {
             name = "Piece2";
             gameObject = FindUtility.Find("Inventory/Piece2");
+        }
+
+        public override void Use(int index)
+        {
+            var note = FindUtility.Find("Environments/Bedroom/Scene/Note");
+            if (note.activeInHierarchy)
+            {
+                SceneManager.Instance.GetScene<Bedroom>("Bedroom").MoveNotePiece2();
+                InventoryManager.Instance.Remove(index);
+            }
+            else
+                GameUtility.ShowItem("Piece2", "Water", "Back", "Mather", "I", "Look", "Die", "Front", "Mather");
         }
     }
 
@@ -56,6 +120,18 @@ namespace Dao.InventorySystem
             name = "Piece3";
             gameObject = FindUtility.Find("Inventory/Piece3");
         }
+
+        public override void Use(int index)
+        {
+            var note = FindUtility.Find("Environments/Bedroom/Scene/Note");
+            if (note.activeInHierarchy)
+            {
+                SceneManager.Instance.GetScene<Bedroom>("Bedroom").MoveNotePiece3();
+                InventoryManager.Instance.Remove(index);
+            }
+            else
+                GameUtility.ShowItem("Piece3", "I", "Fear", "I", "Fear", "I", "Fear", "Deny", "Kid", "Deny");
+        }
     }
 
     public class Piece4 : Item
@@ -65,6 +141,20 @@ namespace Dao.InventorySystem
             name = "Piece4";
             gameObject = FindUtility.Find("Inventory/Piece4");
         }
+
+        public override void Use(int index)
+        {
+            var note = FindUtility.Find("Environments/Bedroom/Scene/Note");
+            if (note.activeInHierarchy)
+            {
+                SceneManager.Instance.GetScene<Bedroom>("Bedroom").MoveNotePiece4();
+                InventoryManager.Instance.Remove(index);
+            }
+            else
+            {
+                GameUtility.ShowItem("Piece4", "Die", "Fear", "Mather", "Die", "Mather", "Like", "Mather");
+            }
+        }
     }
 
     public class Menu : Item
@@ -73,6 +163,19 @@ namespace Dao.InventorySystem
         {
             name = "Menu";
             gameObject = FindUtility.Find("Inventory/Menu");
+        }
+
+        public override void Use(int index)
+        {
+            GameUtility.ShowItem("Menu", 
+                "Food", "Make",
+                "Open", "Fire", "Source",
+                "Big", "Red", "Food",
+                "Front", "Water",
+                "Big", "Green", "Food",
+                "Front", "Salt",
+                "Small", "Blue", "Food",
+                "Close", "Fire", "Source");
         }
     }
 
@@ -95,6 +198,11 @@ namespace Dao.InventorySystem
                     FindUtility.Find("Environments/EntryRoom/Scene/NearDoor/CloseButton").GetComponent<Responder>().enable = false;
                     InventoryManager.Instance.Remove(index);
                 }
+            }
+            else if (current == "Bedroom")
+            {
+                FindUtility.Find("Environments/Bedroom/Scene/Background/MouseHandle/Key").SetActive(true);
+                InventoryManager.Instance.Remove(index);
             }
         }
     }

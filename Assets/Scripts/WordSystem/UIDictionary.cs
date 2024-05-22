@@ -19,6 +19,10 @@ namespace Dao.WordSystem
 
         private Word m_currentEditWord;
 
+        // 0 正常状态
+        // 1 获取标准译文状态
+        private int m_mode;
+
         public UIDictionary()
         {
             m_root = FindUtility.Find("Inventory/Diary");
@@ -81,10 +85,27 @@ namespace Dao.WordSystem
                     int index = i * 18 + j;
                     m_pages[i].transform.GetChild(j).gameObject.AddComponent<Responder>().onMouseDown = () =>
                     {
-                        m_currentEditWord = m_words[index];
-                        inputFiled.SetActive(true);
-                        inputFiled.GetComponentInChildren<InputField>().text = m_currentEditWord.GetTranslation();
-                        inputFiled.GetComponentInChildren<InputField>().interactable = !m_currentEditWord.getAnswer;
+                        if (m_mode == 0)
+                        {
+                            if (inputFiled.activeInHierarchy)
+                            {
+                                inputFiled.SetActive(false);
+                            }
+                            else
+                            {
+                                m_currentEditWord = m_words[index];
+                                inputFiled.SetActive(true);
+                                inputFiled.GetComponentInChildren<InputField>().text = m_currentEditWord.GetTranslation();
+                                inputFiled.GetComponentInChildren<InputField>().interactable = !m_currentEditWord.getAnswer;
+                            }
+                        }
+                        else if (m_mode == 1)
+                        {
+                            m_words[index].GetAnswer();
+                            var teaUI = FindUtility.Find("Canvas/TeaUI");
+                            teaUI.SetActive(false);
+                            m_mode = 0;
+                        }
                     };
                 }
             }
@@ -94,13 +115,15 @@ namespace Dao.WordSystem
                 if (m_currentEditWord != null)
                 {
                     m_currentEditWord.customTranslation = str;
+                    Debug.Log(m_currentEditWord.id + " " + m_currentEditWord.GetTranslation());
                     inputFiled.SetActive(false);
                 }
             });
         }
 
-        public void Show()
+        public void Show(int mode = 0)
         {
+            m_mode = mode;
             m_root.SetActive(true);
         }
 

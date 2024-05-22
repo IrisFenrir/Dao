@@ -30,16 +30,20 @@ namespace Dao.SceneSystem
         private bool m_notePiece3Down;
         private bool m_notePiece4Down;
 
-        private bool m_isDrawerLocked = false;
+        private bool m_isDrawerLocked = true;
 
         private bool m_canShowInteractive = true;
 
         private MoveTask m_moveTask = new();
 
+        private Transform m_mouseHandle;
+
         public Bedroom()
         {
             m_root = FindUtility.Find("Bedroom");
             Init();
+
+            m_mouseHandle = FindUtility.Find("Environments/Bedroom/Scene/Background/MouseHandle").transform;
         }
 
         public override void Enable()
@@ -250,6 +254,8 @@ namespace Dao.SceneSystem
             }
 
             m_moveTask.Update(deltaTime);
+
+            m_mouseHandle.position = new Vector3(mousePosition.x, mousePosition.y, 0);
         }
 
         private void Init()
@@ -520,25 +526,36 @@ namespace Dao.SceneSystem
                 m_moveTask.Start(GameUtility.GetPlayerPos(drawer));
                 m_moveTask.OnComplete = async () =>
                 {
-                    if (m_isDrawerLocked)
+                    var key = FindUtility.Find("Environments/Bedroom/Scene/Background/MouseHandle/Key");
+                    Debug.Log(key.activeInHierarchy);
+                    if (key.activeInHierarchy)
                     {
-                        responders.SetActive(false);
-                        var order = image.sortingOrder;
-                        image.sortingOrder = 31;
-                        var dialog = DialogUtility.GetDialog("Bedroom-Drawer");
-                        CiphertextDialog.SetPosition(GameUtility.GetDialogPos(drawer));
-                        UIDialogManager.Instance.StartDialog(dialog);
-                        while (UIDialogManager.Instance.Enable)
-                            await Task.Yield();
-                        image.sortingOrder = order;
-                        responders.SetActive(true);
+                        m_isDrawerLocked = false;
+                        key.GetComponent<AudioSource>().Play();
+                        key.SetActive(false);
                     }
                     else
                     {
-                        Rect screenRect = CameraController.Instance.GetScreenRect();
-                        root.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
-                        responders.SetActive(false);
-                        root.SetActive(true);
+                        if (m_isDrawerLocked)
+                        {
+                            responders.SetActive(false);
+                            var order = image.sortingOrder;
+                            image.sortingOrder = 31;
+                            var dialog = DialogUtility.GetDialog("Bedroom-Drawer");
+                            CiphertextDialog.SetPosition(GameUtility.GetDialogPos(drawer));
+                            UIDialogManager.Instance.StartDialog(dialog);
+                            while (UIDialogManager.Instance.Enable)
+                                await Task.Yield();
+                            image.sortingOrder = order;
+                            responders.SetActive(true);
+                        }
+                        else
+                        {
+                            Rect screenRect = CameraController.Instance.GetScreenRect();
+                            root.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
+                            responders.SetActive(false);
+                            root.SetActive(true);
+                        }
                     }
                 };
             };
@@ -556,35 +573,37 @@ namespace Dao.SceneSystem
             {
                 paper.SetActive(false);
                 // 添加道具
-
+                InventoryManager.Instance.AddItem(new BedroomPaper());
             };
         }
 
         private void Note()
         {
             var background = FindUtility.Find("Environments/Bedroom/Scene/Background");
+            var responders = FindUtility.Find("Environments/Bedroom/Scene/Background/Responders");
             var player = FindUtility.Find("Player");
 
             var root = FindUtility.Find("Environments/Bedroom/Scene/Note");
 
             // 显示界面
-            FindUtility.Find("Environments/Bedroom/Scene/Background/Responders/日记本").AddComponent<Responder>().onMouseDown = () =>
+            var note = FindUtility.Find("Environments/Bedroom/Scene/Background/Responders/日记本");
+            note.AddComponent<Responder>().onMouseDown = () =>
             {
-                Rect screenRect = CameraController.Instance.GetScreenRect();
-                root.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
-                background.SetActive(false);
-                player.SetActive(false);
-                CameraController.Instance.Enable = false;
-                root.SetActive(true);
+                m_moveTask.Start(GameUtility.GetPlayerPos(note));
+                m_moveTask.OnComplete = () =>
+                {
+                    Rect screenRect = CameraController.Instance.GetScreenRect();
+                    root.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
+                    root.SetActive(true);
+                    responders.SetActive(false);
+                };
             };
 
             // 关闭界面
-            root.AddComponent<Responder>().onMouseDown = () =>
+            FindUtility.Find("Close", root.transform).AddComponent<Responder>().onMouseDown = () =>
             {
-                background.SetActive(true);
-                player.SetActive(true);
-                CameraController.Instance.Enable = true;
                 root.SetActive(false);
+                responders.SetActive(true);
             };
 
             // 设置鼠标跟随
@@ -650,56 +669,62 @@ namespace Dao.SceneSystem
             var responders = FindUtility.Find("Environments/Bedroom/Scene/Background/Responders");
             var item = FindUtility.Find("Environments/Bedroom/Scene/Background/Responders/" + itemName);
             var image = FindUtility.Find("Environments/Bedroom/Scene/Background/Base/" + itemName).GetComponent<SpriteRenderer>();
-            item.AddComponent<Responder>().onMouseDown = async () =>
+            item.AddComponent<Responder>().onMouseDown = () =>
             {
-                
-                responders.SetActive(false);
-                CameraController.Instance.Enable = false;
-                var order = image.sortingOrder;
-                image.sortingOrder = 31;
-                var dialog = DialogUtility.GetDialog(dialogID);
-                UIDialogManager.Instance.StartDialog(dialog);
-                while (UIDialogManager.Instance.Enable)
-                    await Task.Yield();
-                image.sortingOrder = order;
-                responders.SetActive(true);
-                CameraController.Instance.Enable = true;
+                m_moveTask.Start(GameUtility.GetPlayerPos(item));
+                m_moveTask.OnComplete = async () =>
+                {
+                    responders.SetActive(false);
+                    var order = image.sortingOrder;
+                    image.sortingOrder = 31;
+                    var dialog = DialogUtility.GetDialog(dialogID);
+                    CiphertextDialog.SetPosition(GameUtility.GetDialogPos(item));
+                    UIDialogManager.Instance.StartDialog(dialog);
+                    while (UIDialogManager.Instance.Enable)
+                        await Task.Yield();
+                    image.sortingOrder = order;
+                    responders.SetActive(true);
+                };
             };
         }
 
         private void Photo()
         {
             var background = FindUtility.Find("Environments/Bedroom/Scene/Background");
+            var responders = FindUtility.Find("Environments/Bedroom/Scene/Background/Responders");
             var player = FindUtility.Find("Player");
 
             var root = FindUtility.Find("Environments/Bedroom/Scene/Photo");
             var colliders = root.GetComponentsInChildren<Collider2D>().ToList();
 
             // 显示界面
-            FindUtility.Find("Environments/Bedroom/Scene/Background/Responders/照片").AddComponent<Responder>().onMouseDown = () =>
+            var photo = FindUtility.Find("Environments/Bedroom/Scene/Background/Responders/照片");
+            photo.AddComponent<Responder>().onMouseDown = () =>
             {
-                Rect screenRect = CameraController.Instance.GetScreenRect();
-                root.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
-                background.SetActive(false);
-                player.SetActive(false);
-                CameraController.Instance.Enable = false;
-                root.SetActive(true);
+                m_moveTask.Start(GameUtility.GetPlayerPos(photo));
+                m_moveTask.OnComplete = () =>
+                {
+                    Rect screenRect = CameraController.Instance.GetScreenRect();
+                    root.transform.position = new Vector3(screenRect.x + (screenRect.width) / 2, 0, 0);
+                    root.SetActive(true);
+                    responders.SetActive(false);
+                };
             };
 
             // 关闭界面
-            root.AddComponent<Responder>().onMouseDown = () =>
+            FindUtility.Find("Close", root.transform).AddComponent<Responder>().onMouseDown = () =>
             {
-                background.SetActive(true);
-                player.SetActive(true);
-                CameraController.Instance.Enable = true;
                 root.SetActive(false);
+                responders.SetActive(true);
             };
 
             // 调查 眼
-            FindUtility.Find("Eye", root.transform).AddComponent<Responder>().onMouseDown = async () =>
+            var eye = FindUtility.Find("Eye", root.transform);
+            eye.AddComponent<Responder>().onMouseDown = async () =>
             {
                 colliders.ForEach(c => c.enabled = false);
                 var dialog = DialogUtility.GetDialog("Bedroom-Photo-Eye");
+                CiphertextDialog.SetPosition(GameUtility.GetDialogPos(eye));
                 UIDialogManager.Instance.StartDialog(dialog, false);
                 while (UIDialogManager.Instance.Enable)
                     await Task.Yield();
@@ -707,10 +732,12 @@ namespace Dao.SceneSystem
             };
 
             // 调查 耳
-            FindUtility.Find("Ear", root.transform).AddComponent<Responder>().onMouseDown = async () =>
+            var ear = FindUtility.Find("Ear", root.transform);
+            ear.AddComponent<Responder>().onMouseDown = async () =>
             {
                 colliders.ForEach(c => c.enabled = false);
                 var dialog = DialogUtility.GetDialog("Bedroom-Photo-Ear");
+                CiphertextDialog.SetPosition(GameUtility.GetDialogPos(ear));
                 UIDialogManager.Instance.StartDialog(dialog, false);
                 while (UIDialogManager.Instance.Enable)
                     await Task.Yield();
@@ -723,21 +750,24 @@ namespace Dao.SceneSystem
             var responders = FindUtility.Find("Environments/Bedroom/Scene/Background/Responders");
             var item = FindUtility.Find("Environments/Bedroom/Scene/Background/Responders/窗外");
             var image = FindUtility.Find("Environments/Bedroom/Scene/Background/Base/窗外").GetComponent<SpriteRenderer>();
-            item.AddComponent<Responder>().onMouseDown = async () =>
+            item.AddComponent<Responder>().onMouseDown = () =>
             {
-                responders.SetActive(false);
-                CameraController.Instance.Enable = false;
-                var order = image.sortingOrder;
-                image.sortingOrder = 31;
-                // 播放音效
-
-                var dialog = DialogUtility.GetDialog("Bedroom-Window");
-                UIDialogManager.Instance.StartDialog(dialog);
-                while (UIDialogManager.Instance.Enable)
-                    await Task.Yield();
-                image.sortingOrder = order;
-                responders.SetActive(true);
-                CameraController.Instance.Enable = true;
+                m_moveTask.Start(GameUtility.GetPlayerPos(item));
+                m_moveTask.OnComplete = async () =>
+                {
+                    responders.SetActive(false);
+                    var order = image.sortingOrder;
+                    image.sortingOrder = 31;
+                    // 播放音效
+                    item.GetComponent<AudioSource>().Play();
+                    var dialog = DialogUtility.GetDialog("Bedroom-Window");
+                    CiphertextDialog.SetPosition(GameUtility.GetDialogPos(item));
+                    UIDialogManager.Instance.StartDialog(dialog);
+                    while (UIDialogManager.Instance.Enable)
+                        await Task.Yield();
+                    image.sortingOrder = order;
+                    responders.SetActive(true);
+                };
             };
         }
     }

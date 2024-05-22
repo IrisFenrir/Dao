@@ -13,11 +13,13 @@ namespace Dao.WordSystem
         {
             this.word = word;
             m_root = gameObject;
-            var responder = m_root.AddComponent<Responder>();
+            //var responder = m_root.AddComponent<Responder>();
+            if (!m_root.TryGetComponent<Responder>(out var responder))
+                responder = m_root.AddComponent<Responder>();
             responder.onMouseEnter = () =>
             {
                 // 显示文字
-                text.transform.position = gameObject.transform.position;
+                text.transform.position = new Vector3(gameObject.transform.position.x, gameObject.transform.position.y, -6);
                 text.GetComponentInChildren<Text>().text = word.GetTranslation();
                 text.SetActive(true);
             };

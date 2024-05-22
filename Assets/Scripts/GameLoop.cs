@@ -44,6 +44,11 @@ public class GameLoop : MonoBehaviour
         SceneManager.Instance.AddScene("Kitchen", new Kitchen());
         SceneManager.Instance.AddScene("Bedroom", new Bedroom());
         SceneManager.Instance.LoadScene("EntryRoom");
+
+        //InventoryManager.Instance.AddItem(new Piece1());
+        //InventoryManager.Instance.AddItem(new Piece2());
+        //InventoryManager.Instance.AddItem(new Piece3());
+        //InventoryManager.Instance.AddItem(new Piece4());
     }
 
     private void Update()

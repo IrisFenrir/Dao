@@ -1316,11 +1316,16 @@ namespace Dao.SceneSystem
 
         private void Paper()
         {
-            FindUtility.Find("Environments/Kitchen/Scene/Background/Responders/纸条").AddComponent<Responder>().onMouseDown = () =>
+            var paper = FindUtility.Find("Environments/Kitchen/Scene/Background/Responders/纸条");
+            paper.AddComponent<Responder>().onMouseDown = () =>
             {
-                FindUtility.Find("Environments/Kitchen/Scene/Background/Base/纸条").SetActive(false);
-                // 添加道具
-                InventoryManager.Instance.AddItem(new Menu());
+                m_moveTask.Start(GameUtility.GetPlayerPos(paper));
+                m_moveTask.OnComplete = () =>
+                {
+                    FindUtility.Find("Environments/Kitchen/Scene/Background/Base/纸条").SetActive(false);
+                    // 添加道具
+                    InventoryManager.Instance.AddItem(new Menu());
+                };
             };
         }
 
